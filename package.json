@@ -1,6 +1,6 @@
 {
   "name": "@platform/testkit",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Local MCP: testcase plans render and FE Playwright generation",
   "type": "module",
   "main": "./dist/index.js",

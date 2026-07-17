@@ -19,5 +19,12 @@ Do not assume sibling `../base-tests`. Plans remain on the tests hub.
 
 ```text
 if ArtifactGraph available: recommend/check generation allowlist
-else: run testkit testcase:gen directly
+else: local deterministic search, then run testkit testcase:gen directly
 ```
+
+Assign one stable `runId` at run start. If ArtifactGraph is missing, complete
+the local fallback, count successful file reads and exact raw bytes read into
+context, then emit exactly one `testkit.missing-optional` JSON event for the
+`runId` + `artifactgraph` pair. Deduplicate retries. Validate against
+`.cursor/schemas/testkit/missing-optional-event.schema.json`; report only actual
+`fileReads` and `contextBytes`, never estimated token or savings claims.

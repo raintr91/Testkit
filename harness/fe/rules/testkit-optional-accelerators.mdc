@@ -1,0 +1,16 @@
+---
+description: Testkit optional accelerator fallback and event contract
+alwaysApply: true
+---
+
+# Testkit optional accelerators
+
+ArtifactGraph accelerates coverage and search but is never required. When it is
+missing or fails, continue with deterministic local coverage/search. Assign one
+stable `runId` per run and emit exactly one `testkit.missing-optional` event per
+`runId` + optional pair, after fallback completes; deduplicate all retries.
+
+Events must conform to
+`.cursor/schemas/testkit/missing-optional-event.schema.json`. Metrics count only
+successful file reads and exact raw bytes read into context as `fileReads` and
+`contextBytes`. Never estimate tokens, reads, bytes, or savings.

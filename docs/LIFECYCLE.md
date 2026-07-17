@@ -26,6 +26,12 @@ Status exits non-zero when compatibility fails or any path is not healthy.
 Running `init` with another profile preserves previous managed targets in the
 manifest with `stale: true`; it does not delete them.
 
+Common managed assets belong to every profile. In particular,
+`.cursor/schemas/testkit/missing-optional-event.schema.json` remains a current
+managed target across tests↔FE switches. Normal hash protection applies:
+unmodified copies update safely, while local modifications conflict unless
+`--force` is explicit.
+
 ```bash
 testkit prune --project-root /path/to/project       # dry-run
 testkit prune --project-root /path/to/project --yes # apply

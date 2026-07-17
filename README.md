@@ -17,8 +17,13 @@ Switching between `tests` and `fe` keeps targets from the previous profile in
 `.testkit/install-manifest.json` as stale. `status` reports compatible,
 healthy, missing, modified, and stale state. `prune` only considers paths
 recorded in that manifest and always preserves locally modified stale files.
+The Testkit-owned optional-event schema is shared by both profiles at
+`.cursor/schemas/testkit/missing-optional-event.schema.json`, so profile
+switches keep it current rather than marking it stale.
 See [Managed harness lifecycle](docs/LIFECYCLE.md).
 
 Do not assume sibling `../base-tests` or `../base-docs`. Pass explicit roots.
 
-ArtifactGraph is optional for coverage/gap acceleration only.
+ArtifactGraph is optional for coverage/gap acceleration only. Missing
+ArtifactGraph always continues through deterministic local coverage/search and
+uses the [missing-optional event contract](docs/OPTIONAL-ACCELERATORS.md).

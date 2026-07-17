@@ -20,5 +20,12 @@ testkit cases:check -- …
 
 ```text
 if ArtifactGraph available: coverage/gap hints
-else: model review from scoped plan + docs evidence
+else: local deterministic coverage/search from scoped plan + docs evidence
 ```
+
+At run start, assign one stable `runId`. If ArtifactGraph is missing, complete
+the local fallback, count successful file reads and exact raw bytes read into
+context, then emit exactly one `testkit.missing-optional` JSON event for the
+`runId` + `artifactgraph` pair. Deduplicate retries. Use
+`.cursor/schemas/testkit/missing-optional-event.schema.json`; report only actual
+`fileReads` and `contextBytes`, never estimated token or savings claims.

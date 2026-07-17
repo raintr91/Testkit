@@ -7,9 +7,12 @@ import test from 'node:test'
 
 import {
   installHarness,
+  MissingOptionalEventEmitter,
   pruneHarness,
+  ReadMeasurement,
   SKILLS_BY_TYPE,
   statusHarness,
+  validateMissingOptionalEvent,
 } from '../dist/index.js'
 import { mergePlatformRepos } from '../dist/install/platform-repos.js'
 import { installCursorMcp } from '../dist/install/cursor-mcp.js'
@@ -22,6 +25,14 @@ test('tests profile syncs plan skills only', () => {
     assert.ok(existsSync(path.join(root, '.cursor', 'skills', skill, 'SKILL.md')))
   }
   assert.equal(existsSync(path.join(root, '.cursor', 'skills', 'test', 'SKILL.md')), false)
+  assert.ok(
+    existsSync(
+      path.join(root, '.cursor', 'schemas', 'testkit', 'missing-optional-event.schema.json'),
+    ),
+  )
+  assert.ok(
+    existsSync(path.join(root, '.cursor', 'rules', 'testkit-optional-accelerators.mdc')),
+  )
   const platform = JSON.parse(readFileSync(path.join(root, 'platform-repos.json'), 'utf8'))
   assert.deepEqual(platform.harness.profiles.tests.skills, SKILLS_BY_TYPE.tests)
 })
@@ -40,6 +51,31 @@ test('fe profile syncs playwright skills only and keeps explicit roots', () => {
   assert.equal(cfg.mcpServers.testkit.env.TESTKIT_DOCS_ROOT, '/tmp/docs-hub')
   assert.ok(existsSync(path.join(root, '.cursor', 'skills', 'test', 'SKILL.md')))
   assert.equal(existsSync(path.join(root, '.cursor', 'skills', 'testcase', 'SKILL.md')), false)
+  assert.ok(
+    existsSync(
+      path.join(root, '.cursor', 'schemas', 'testkit', 'missing-optional-event.schema.json'),
+    ),
+  )
+  assert.ok(
+    existsSync(path.join(root, '.cursor', 'rules', 'testkit-optional-accelerators.mdc')),
+  )
+})
+
+test('shared schema stays current across profile switches and remains hash protected', () => {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'testkit-shared-schema-'))
+  const schemaRel = '.cursor/schemas/testkit/missing-optional-event.schema.json'
+  const schemaPath = path.join(root, schemaRel)
+
+  installHarness({ projectRoot: root, type: 'tests' })
+  const installed = readFileSync(schemaPath, 'utf8')
+  const switched = installHarness({ projectRoot: root, type: 'fe' })
+  assert.ok(switched.unchanged.includes(schemaPath))
+  assert.equal(statusHarness({ projectRoot: root }).stale.includes(schemaRel), false)
+
+  writeFileSync(schemaPath, `${installed}\n`)
+  const switchedBack = installHarness({ projectRoot: root, type: 'tests' })
+  assert.ok(switchedBack.conflicts.includes(schemaPath))
+  assert.equal(readFileSync(schemaPath, 'utf8'), `${installed}\n`)
 })
 
 test('status reports healthy, missing, modified, stale, and compatibility buckets', () => {
@@ -160,4 +196,57 @@ test('testcase engine no longer imports sibling codegen path', () => {
   const gen = readFileSync('engines/testcase/runners/generate.mjs', 'utf8')
   assert.match(gen, /TESTKIT_ROOT/)
   assert.doesNotMatch(gen, /\.\.\/\.\.\/codegen\//)
+})
+
+test('missing optional event schema and emitter enforce exact deduplicated events', () => {
+  const schema = JSON.parse(
+    readFileSync('schemas/missing-optional-event.schema.json', 'utf8'),
+  )
+  assert.equal(schema.additionalProperties, false)
+  assert.equal(schema.properties.event.const, 'testkit.missing-optional')
+  assert.equal(schema.properties.package.const, '@platform/testkit')
+  assert.deepEqual(schema.required, [
+    'schemaVersion',
+    'event',
+    'package',
+    'runId',
+    'optional',
+    'reason',
+    'fallback',
+    'metrics',
+  ])
+
+  const root = mkdtempSync(path.join(os.tmpdir(), 'testkit-metrics-'))
+  const evidence = path.join(root, 'evidence.txt')
+  writeFileSync(evidence, 'coverage: ✓\n')
+  const measurement = new ReadMeasurement()
+  measurement.readText(evidence)
+  const metrics = measurement.snapshot()
+  assert.deepEqual(metrics, {
+    fileReads: 1,
+    contextBytes: Buffer.byteLength('coverage: ✓\n'),
+  })
+
+  const emitter = new MissingOptionalEventEmitter()
+  const input = {
+    runId: 'testkit-run-1',
+    optional: 'artifactgraph',
+    reason: 'unavailable',
+    fallback: 'local-deterministic-coverage',
+    metrics,
+  }
+  const event = emitter.emit(input)
+  assert.deepEqual(event, {
+    schemaVersion: '1.0.0',
+    event: 'testkit.missing-optional',
+    package: '@platform/testkit',
+    ...input,
+  })
+  assert.deepEqual(validateMissingOptionalEvent(event), { ok: true, errors: [] })
+  assert.equal(emitter.emit({ ...input, reason: 'invocation-failed' }), null)
+  assert.ok(emitter.emit({ ...input, optional: 'another-optional' }))
+  assert.throws(
+    () => emitter.emit({ ...input, runId: 'invalid-metrics', metrics: { fileReads: 1.5, contextBytes: 1 } }),
+    /metrics\.fileReads must be a non-negative integer/,
+  )
 })

@@ -93,6 +93,12 @@ function currentFiles(type: TestkitType): InstallManifest['files'] {
       sha256: hash(content),
     }
   }
+  const schemaSource = path.join(packageRoot(), 'schemas', 'missing-optional-event.schema.json')
+  const schemaTarget = '.cursor/schemas/testkit/missing-optional-event.schema.json'
+  files[schemaTarget] = {
+    source: path.relative(packageRoot(), schemaSource).split(path.sep).join('/'),
+    sha256: hash(readFileSync(schemaSource, 'utf8')),
+  }
   return files
 }
 

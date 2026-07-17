@@ -14,5 +14,11 @@ After `/test`. Plan YAML remains on the tests hub (`/grill-testcase`).
 
 ```text
 if ArtifactGraph available: recommend/check testcase gen
-else: testkit testcase:gen:dry …
+else: local deterministic search, then testkit testcase:gen:dry …
 ```
+
+Use one stable `runId` per run. When ArtifactGraph is missing, finish the local
+fallback before emitting exactly one `testkit.missing-optional` event for that
+`runId` + `artifactgraph`; retries must not emit again. Conform to
+`.cursor/schemas/testkit/missing-optional-event.schema.json` and include only
+actual successful `fileReads` and exact raw `contextBytes`, never estimates.
