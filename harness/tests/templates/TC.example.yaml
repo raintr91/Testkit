@@ -1,0 +1,34 @@
+id: TC-EXAMPLE-VALID
+title: Example flow with valid input should succeed
+summary: Ví dụ — luồng hợp lệ đi đến trạng thái thành công.
+story: |
+  Given điều kiện đầu vào hợp lệ
+  When thực hiện thao tác chính
+  Then thấy trạng thái thành công
+refs:
+  capability: CAP-admin
+  component: CMP-00
+  scenario: SC-EXAMPLE
+  example: EX-EXAMPLE-01
+  screen: W-AD-EXAMPLE-001
+  target: CTR-admin-web
+coverage: [happy]
+priority: high
+automation: automated
+tags: [smoke, e2e, ui]
+dimensions:
+  business: [workflow]
+  technical: [ui]
+  quality: []
+preconditions: []
+testData: {}
+steps: []
+expected: Success state is visible
+postcondition: []
+feature: example-slug
+genType: e2e
+route:
+  path: /example
+  auth: guest
+testIds:
+  required: []

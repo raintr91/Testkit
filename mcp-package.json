@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "package": "@platform/testkit",
+  "version": "0.1.0",
+  "types": ["tests", "fe"],
+  "requires": [],
+  "optional": ["@platform/artifactgraph"],
+  "tools": [
+    "cases_render",
+    "cases_check_plans",
+    "cases_check_coverage",
+    "testcase_gen",
+    "testcase_gen_dry",
+    "e2e_registry_validate"
+  ],
+  "skillsByType": {
+    "tests": ["testcase", "grill-testcase"],
+    "fe": ["test", "grill-test"]
+  },
+  "compatibility": {
+    "node": ">=22",
+    "toolApi": 1,
+    "harnessApi": 1
+  }
+}

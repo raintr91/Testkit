@@ -1,0 +1,47 @@
+{
+  "name": "@platform/testkit",
+  "version": "0.1.0",
+  "description": "Local MCP: testcase plans render and FE Playwright generation",
+  "type": "module",
+  "main": "./dist/index.js",
+  "bin": {
+    "testkit": "./bin/testkit.mjs",
+    "testkit-mcp": "./bin/testkit-mcp.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/raintr91/Testkit.git"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "docs",
+    "engines",
+    "harness",
+    "install.sh",
+    "install.ps1",
+    "mcp-package.json",
+    "schemas",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build",
+    "test": "npm run build && node --test test/*.test.mjs",
+    "mcp": "node bin/testkit-mcp.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "handlebars": "^4.7.8",
+    "yaml": "^2.9.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^5.9.0"
+  }
+}
