@@ -8,7 +8,16 @@ Independent MCP/harness for:
 ```bash
 testkit init --type=tests --yes
 testkit init --type=fe --tests-root=/path/to/tests-hub --docs-root=/path/to/docs-hub --yes
+testkit status
+testkit prune             # dry-run; changes nothing
+testkit prune --yes       # delete only unmodified stale managed files
 ```
+
+Switching between `tests` and `fe` keeps targets from the previous profile in
+`.testkit/install-manifest.json` as stale. `status` reports compatible,
+healthy, missing, modified, and stale state. `prune` only considers paths
+recorded in that manifest and always preserves locally modified stale files.
+See [Managed harness lifecycle](docs/LIFECYCLE.md).
 
 Do not assume sibling `../base-tests` or `../base-docs`. Pass explicit roots.
 

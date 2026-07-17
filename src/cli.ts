@@ -5,7 +5,13 @@ import {
   type TestkitType,
 } from './config/project-root.js'
 import { installCursorMcp } from './install/cursor-mcp.js'
-import { installHarness, SKILLS_BY_TYPE } from './install/harness.js'
+import {
+  installHarness,
+  pruneHarness,
+  SKILLS_BY_TYPE,
+  statusHarness,
+  type HarnessStatus,
+} from './install/harness.js'
 import { mergePlatformRepos } from './install/platform-repos.js'
 import { runEngine } from './engines/run.js'
 
@@ -29,6 +35,8 @@ function usage(): never {
   console.log(`testkit ${packageVersion()}
 
   init --type=tests|fe [--project-root <path>] [--tests-root <path>] [--docs-root <path>] [--force] [--yes]
+  status [--project-root <path>]
+  prune [--project-root <path>] [--yes]
   cases:render|cases:check|cases:coverage [--project-root <path>] -- …engine args
   testcase:gen|testcase:gen:dry|e2e-registry [--project-root <path>] [--tests-root <path>] [--docs-root <path>] -- …engine args
   version
@@ -44,6 +52,16 @@ function printResult(result: { status: number | null; stdout: string; stderr: st
   if (result.stdout) process.stdout.write(result.stdout)
   if (result.stderr) process.stderr.write(result.stderr)
   process.exit(result.status ?? 1)
+}
+
+function printStatus(status: HarnessStatus): void {
+  console.log(`manifest: ${status.manifestPath}`)
+  console.log(`compatibility: ${status.compatibility.compatible ? 'compatible' : 'incompatible'}`)
+  for (const issue of status.compatibility.issues) console.log(`  issue: ${issue}`)
+  for (const bucket of ['healthy', 'missing', 'modified', 'stale'] as const) {
+    console.log(`${bucket}: ${status[bucket].length}`)
+    for (const file of status[bucket]) console.log(`  ${file}`)
+  }
 }
 
 async function main(): Promise<void> {
@@ -69,6 +87,11 @@ async function main(): Promise<void> {
     for (const file of harness.written) console.log(`  wrote: ${file}`)
     for (const file of harness.unchanged) console.log(`  unchanged: ${file}`)
     for (const file of harness.conflicts) console.log(`  conflict: ${file}`)
+    const lifecycle = statusHarness({ projectRoot: root })
+    if (lifecycle.stale.length > 0) {
+      console.log(`stale: ${lifecycle.stale.length}`)
+      console.log(`review: testkit prune --project-root ${JSON.stringify(root)}`)
+    }
     const maps = mergePlatformRepos({ projectRoot: root, type })
     console.log(`updated: ${maps.path}`)
     for (const warning of maps.warnings) console.warn(`warning: ${warning}`)
@@ -76,6 +99,32 @@ async function main(): Promise<void> {
   }
 
   const root = resolveProjectRoot(arg('--project-root'))
+  if (command === 'status') {
+    const status = statusHarness({ projectRoot: root })
+    printStatus(status)
+    if (
+      !status.compatibility.compatible
+      || status.missing.length > 0
+      || status.modified.length > 0
+      || status.stale.length > 0
+    ) {
+      process.exitCode = 1
+    }
+    return
+  }
+  if (command === 'prune') {
+    const result = pruneHarness({ projectRoot: root, yes: has('--yes') })
+    console.log(`mode: ${result.dryRun ? 'dry-run' : 'apply'}`)
+    for (const file of result.candidates) {
+      console.log(`  ${result.dryRun ? 'would delete' : 'deleted'}: ${file}`)
+    }
+    for (const file of result.preservedModified) console.log(`  preserved modified: ${file}`)
+    for (const file of result.missing) console.log(`  missing: ${file}`)
+    if (result.dryRun && result.candidates.length > 0) {
+      console.log('Run again with --yes to delete unmodified stale files.')
+    }
+    return
+  }
   const env: Record<string, string> = {}
   if (arg('--tests-root')) env.TESTKIT_TESTS_ROOT = arg('--tests-root')!
   if (arg('--docs-root')) env.TESTKIT_DOCS_ROOT = arg('--docs-root')!
