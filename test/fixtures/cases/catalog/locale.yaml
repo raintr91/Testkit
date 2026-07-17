@@ -1,0 +1,9 @@
+memberLocale: en
+headings:
+  en:
+    coverage: Coverage
+    preconditions: Preconditions
+    steps: Steps
+    expected: Expected
+    technical: Technical details
+    testData: Test data

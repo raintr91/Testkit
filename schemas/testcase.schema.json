@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://base-tests.local/schemas/testcase.schema.json",
-  "title": "base-tests TC YAML",
+  "$id": "https://raw.githubusercontent.com/raintr91/Testkit/main/schemas/testcase.schema.json",
+  "title": "Testkit testcase YAML",
   "type": "object",
   "required": ["id", "title", "coverage", "refs", "genType", "feature", "route", "testIds"],
   "additionalProperties": true,

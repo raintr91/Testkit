@@ -90,20 +90,15 @@ function absUnder(root, rel) {
   return abs
 }
 
-/** Prefer ir/spec.yaml under a Code folder for portal:gen */
+/** Prefer ir/spec.yaml under a Code folder for codegen */
 export function preferGenSpec(codeDir) {
   if (!codeDir || !existsSync(codeDir)) return null
   const ir = path.join(codeDir, 'ir', 'spec.yaml')
-  if (existsSync(ir)) return ir
-  // fallback: any *bundle.yaml (may not be gen-ready)
-  for (const f of readdirSync(codeDir)) {
-    if (f.endsWith('.bundle.yaml') || f === 'spec.yaml') return path.join(codeDir, f)
-  }
-  return null
+  return existsSync(ir) ? ir : null
 }
 
 /**
- * @param {string} repoRoot FE/BE code repo (usually portal)
+ * @param {string} repoRoot FE/BE code project
  * @param {string} id
  * @param {'codegen'|'testcase'} mode
  * @returns {{ kind: string, id: string, paths: string[], notes: string[] }}
@@ -111,25 +106,31 @@ export function preferGenSpec(codeDir) {
 export function resolveHubId(repoRoot, id, mode = 'testcase') {
   if (!id || typeof id !== 'string') throw new Error('Missing --id')
   const notes = []
-  const docsRoot = process.env.TESTKIT_DOCS_ROOT || process.env.CODEGENKIT_DOCS_ROOT
-    ? path.resolve(process.env.TESTKIT_DOCS_ROOT || process.env.CODEGENKIT_DOCS_ROOT)
-    : (() => {
-        try { return resolveProjectRoot(repoRoot, 'docs') } catch {
-          return resolveProjectRoot(repoRoot, 'base-docs')
-        }
-      })()
-  const testsRoot = process.env.TESTKIT_TESTS_ROOT
-    ? path.resolve(process.env.TESTKIT_TESTS_ROOT)
-    : (() => {
-        try { return resolveProjectRoot(repoRoot, 'tests') } catch {
-          return resolveProjectRoot(repoRoot, 'base-tests')
-        }
-      })()
-  const docsIdx = loadDocsIndex(docsRoot)
-  const testsIdx = loadTestsIndex(testsRoot)
+  let docs
+  let tests
+  const getDocs = () => {
+    if (!docs) {
+      const root = process.env.TESTKIT_DOCS_ROOT || process.env.CODEGENKIT_DOCS_ROOT
+        ? path.resolve(process.env.TESTKIT_DOCS_ROOT || process.env.CODEGENKIT_DOCS_ROOT)
+        : resolveProjectRoot(repoRoot, 'docs')
+      docs = { root, index: loadDocsIndex(root) }
+    }
+    return docs
+  }
+  const getTests = () => {
+    if (!tests) {
+      const root = process.env.TESTKIT_TESTS_ROOT
+        ? path.resolve(process.env.TESTKIT_TESTS_ROOT)
+        : resolveProjectRoot(repoRoot, 'tests')
+      tests = { root, index: loadTestsIndex(root) }
+    }
+    return tests
+  }
 
   // Suite
-  if (testsIdx.suites?.[id]) {
+  const testcaseHub = mode === 'testcase' ? getTests() : null
+  if (testcaseHub?.index.suites?.[id]) {
+    const { root: testsRoot, index: testsIdx } = testcaseHub
     const suitePath = absUnder(testsRoot, testsIdx.suites[id])
     const raw = readFileSync(suitePath, 'utf8')
     const caseIds = [...raw.matchAll(/^\s*-\s+(TC-[\w-]+)/gm)].map((m) => m[1])
@@ -145,18 +146,20 @@ export function resolveHubId(repoRoot, id, mode = 'testcase') {
 
   // TC-* file
   if (/^TC-/i.test(id)) {
+    const { root: testsRoot, index: testsIdx } = getTests()
     const rel = testsIdx.codeIds?.[id]
     const p = absUnder(testsRoot, rel)
-    if (!p) throw new Error(`Unknown testcase id ${id} — update base-tests/registries/tests-index.json`)
+    if (!p) throw new Error(`Unknown testcase id ${id} — update the tests hub registries/tests-index.json`)
     return { kind: 'testcase', id, paths: [p], notes }
   }
 
   // Screen / API / UI code folder on docs
   if (/^(W|API|UI)-/i.test(id)) {
     if (mode === 'testcase') {
+      const { root: testsRoot, index: testsIdx } = getTests()
       const screenRel = testsIdx.codeIds?.[id] || `cases/${id}`
       const screenDir = absUnder(testsRoot, screenRel)
-      if (!screenDir) throw new Error(`No cases folder for ${id} under base-tests`)
+      if (!screenDir) throw new Error(`No cases folder for ${id} in the tests hub`)
       const paths = readdirSync(screenDir)
         .filter((f) => /^TC-.*\.ya?ml$/i.test(f))
         .map((f) => path.join(screenDir, f))
@@ -165,17 +168,19 @@ export function resolveHubId(repoRoot, id, mode = 'testcase') {
       return { kind: 'screen-cases', id, paths, notes }
     }
     // codegen
+    const { root: docsRoot, index: docsIdx } = getDocs()
     const rel = docsIdx.codeIds?.[id]
-    if (!rel) throw new Error(`Unknown code id ${id} in base-docs registries/docs-index.json`)
+    if (!rel) throw new Error(`Unknown code id ${id} in the docs hub registries/docs-index.json`)
     const codeDir = absUnder(docsRoot, rel)
     const spec = preferGenSpec(codeDir)
-    if (!spec) throw new Error(`No ir/spec.yaml or bundle under ${rel}`)
+    if (!spec) throw new Error(`No ir/spec.yaml under ${rel}`)
     notes.push(`codegen input: ${path.relative(repoRoot, spec)}`)
     return { kind: 'code', id, paths: [spec], notes, codeDir }
   }
 
   // CMP-* → all code children
   if (/^CMP-/i.test(id)) {
+    const { index: docsIdx } = getDocs()
     const cmp = (docsIdx.components || []).find(
       (c) => c.id === id || c.id.startsWith(id) || (c.slug && id.toLowerCase().includes(c.slug)),
     )
@@ -199,7 +204,7 @@ export function resolveHubId(repoRoot, id, mode = 'testcase') {
       }
     }
     for (const api of cmp.apis || []) {
-      notes.push(`skip API ${api} for portal:gen (FE codegen); design lives in docs hub`)
+      notes.push(`skip API ${api} for FE codegen; design lives in docs hub`)
     }
     if (!paths.length) {
       throw new Error(`CMP ${id}: no gen-ready W-* specs (need ir/spec.yaml after /dev-grill-docs)`)
@@ -209,7 +214,11 @@ export function resolveHubId(repoRoot, id, mode = 'testcase') {
 
   // CTR-* → screens linked in docs index containers map (optional)
   if (/^CTR-/i.test(id)) {
-    const screens = docsIdx.containers?.[id]?.screens || testsIdx.targets?.[id]?.screens || []
+    const testsIdx = mode === 'testcase' ? getTests().index : null
+    let screens = testsIdx?.targets?.[id]?.screens || []
+    if (!screens.length) {
+      screens = getDocs().index.containers?.[id]?.screens || []
+    }
     if (!screens.length) {
       // default admin web → pilot screens
       if (id === 'CTR-admin-web') {
@@ -228,6 +237,7 @@ export function resolveHubId(repoRoot, id, mode = 'testcase') {
 
   // SC-* scenario → cases listed in tests index
   if (/^SC-/i.test(id)) {
+    const testsIdx = getTests().index
     const sc = testsIdx.scenarios?.[id]
     if (!sc?.cases?.length) {
       throw new Error(`Unknown scenario ${id} — add scenarios.${id}.cases in tests-index.json`)

@@ -105,7 +105,7 @@ async function main() {
     const paths = await listFeatureTestcases(root, options.feature)
     if (!paths.length) {
       throw new Error(
-        `No TC-*.yaml under tests hub cases//${options.feature}. Prefer: pnpm testcase:gen --id <W-|TC-|suite>`,
+        `No TC-*.yaml under tests hub cases/${options.feature}. Prefer: pnpm testcase:gen --id <W-|TC-|suite>`,
       )
     }
     for (const testcasePath of paths) {

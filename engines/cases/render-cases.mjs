@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * Render base-tests case YAML → Markdown (member-first, locale-aware).
+ * Render tests hub case YAML → Markdown (member-first, locale-aware).
  * Usage: pnpm cases:render
  *        pnpm cases:render -- cases/W-AD-AUTH-001
  */

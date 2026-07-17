@@ -192,7 +192,7 @@ test('CLI status and prune expose lifecycle behavior', () => {
   assert.equal(existsSync(path.join(root, '.cursor', 'skills', 'testcase', 'SKILL.md')), false)
 })
 
-test('testcase engine no longer imports sibling codegen path', () => {
+test('testcase engine uses its package-owned generator path', () => {
   const gen = readFileSync('engines/testcase/runners/generate.mjs', 'utf8')
   assert.match(gen, /TESTKIT_ROOT/)
   assert.doesNotMatch(gen, /\.\.\/\.\.\/codegen\//)
@@ -255,7 +255,7 @@ test('installers pin the released tag and enforce lockfiles', () => {
   const shell = readFileSync('install.sh', 'utf8')
   const powershell = readFileSync('install.ps1', 'utf8')
   for (const script of [shell, powershell]) {
-    assert.match(script, /v0\.2\.3/)
+    assert.match(script, /v0\.2\.4/)
     assert.match(script, /pnpm install --frozen-lockfile/)
     assert.match(script, /npm ci/)
     assert.doesNotMatch(script, /(?:REF:-main|Ref = "main")/)

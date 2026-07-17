@@ -23,7 +23,7 @@ async function main() {
   const bundles = registry.bundles ?? {}
   const matchers = registry.matchers ?? {}
 
-  console.log(`portal-e2e-test.registry v${registry.version}`)
+  console.log(`e2e-test.registry v${registry.version}`)
   console.log(`  path: ${REGISTRY_REL}`)
   console.log(`  bundles: ${Object.keys(bundles).join(', ')}`)
 
@@ -66,7 +66,7 @@ async function main() {
     process.exit(1)
   }
 
-  console.log('portal:e2e-registry OK')
+  console.log('testkit:e2e-registry OK')
 }
 
 main().catch((error) => {

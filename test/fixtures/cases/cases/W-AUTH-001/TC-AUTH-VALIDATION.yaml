@@ -1,0 +1,18 @@
+id: TC-AUTH-VALIDATION
+title: Reject an invalid email
+coverage:
+  - validation
+refs:
+  scenario: SC-AUTH
+preconditions: []
+steps:
+  - action: fill
+    testId: login-email
+    value: invalid
+expected:
+  - Validation message is visible
+testData:
+  email: invalid
+testIds:
+  required:
+    - login-email

@@ -1,0 +1,27 @@
+id: TC-AUTH-HAPPY
+title: Sign in with valid credentials
+summary: Member signs in successfully
+story: A registered member can access the application.
+coverage:
+  - happy
+refs:
+  scenario: SC-AUTH
+  rule: RUL-AUTH-LOGIN
+preconditions:
+  - Member account is active
+steps:
+  - action: goto
+    path: /login
+  - action: fill
+    testId: login-email
+    value: member@example.test
+  - action: click
+    testId: login-submit
+expected:
+  - Dashboard is visible
+testData:
+  email: member@example.test
+testIds:
+  required:
+    - login-email
+    - login-submit

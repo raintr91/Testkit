@@ -1,12 +1,12 @@
 ---
-description: Plans docs-first — rule SSOT base-docs; no TC→docs sync
+description: Plans docs-first — rule SSOT in docs hub; no TC→docs sync
 globs: cases/**/*,scenarios/**/*,suites/**/*
 alwaysApply: false
 ---
 
 # Plans — docs-first
 
-- **Rule / acceptance SSOT = base-docs.** Hub chỉ `refs.rule` (id + link). Không copy nội dung rule vào YAML để “sửa cho tiện”.
+- **Rule / acceptance SSOT = docs hub.** Tests hub chỉ `refs.rule` (id + link). Không copy nội dung rule vào YAML để “sửa cho tiện”.
 - Grill thấy **scope hở / rule mơ hồ** → handoff docs (`/update-spec`, grill-docs). **Không** vá bằng testcase.
 - Chỉ thêm/sửa `TC-*` khi docs đã rõ và thiếu **bao phủ** (`coverage`).
 - YAML = máy (gen Playwright). MD = member đọc đối chiếu docs.

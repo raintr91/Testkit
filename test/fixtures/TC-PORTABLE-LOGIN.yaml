@@ -1,0 +1,23 @@
+id: TC-PORTABLE-LOGIN
+title: portable login generation
+coverage:
+  - happy
+refs:
+  screen: W-AUTH-001
+genType: e2e
+feature: auth
+route:
+  path: /login
+  auth: guest
+testIds:
+  required:
+    - login-form
+steps:
+  - action: goto
+    path: /login
+  - action: waitFor
+    testId: login-form
+assertions:
+  ui:
+    - testId: login-form
+      visible: true

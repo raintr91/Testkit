@@ -1,0 +1,6 @@
+{
+  "files": {
+    "tests/e2e/auth/TC-PORTABLE-LOGIN.spec.ts": "c7e109ee0b31f3ad0b9ab844194f34884974ac6992880c8ed841c7b6f69d7ed6",
+    "tests/e2e/pages/auth/TCPORTABLELOGINPage.ts": "a0f86115ca313c7c61db710fbc112fee671b87ff2f29e70fb63826028a87e339"
+  }
+}

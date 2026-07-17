@@ -1,6 +1,6 @@
 param(
   [string]$InstallDir = "$HOME\.testkit",
-  [string]$Ref = "v0.2.3",
+  [string]$Ref = "v0.2.4",
   [ValidateSet("tests", "fe")]
   [string]$Type = "tests",
   [switch]$Uninstall

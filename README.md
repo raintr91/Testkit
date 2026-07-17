@@ -5,7 +5,7 @@ Independent MCP/harness for:
 - `--type=tests`: `/testcase` `/grill-testcase` + `cases:render|check|coverage`
 - `--type=fe`: `/test` `/grill-test` + Playwright `testcase:gen*`
 
-Installers default to immutable release tag `v0.2.3` and enforce the committed
+Installers default to immutable release tag `v0.2.4` and enforce the committed
 lockfile (`pnpm --frozen-lockfile` or `npm ci`). Set `TESTKIT_REF` /
 PowerShell `-Ref` only for an explicit alternate release.
 
@@ -26,7 +26,8 @@ The Testkit-owned optional-event schema is shared by both profiles at
 switches keep it current rather than marking it stale.
 See [Managed harness lifecycle](docs/LIFECYCLE.md).
 
-Do not assume sibling `../base-tests` or `../base-docs`. Pass explicit roots.
+Configure non-local hubs explicitly with `TESTKIT_TESTS_ROOT` and
+`TESTKIT_DOCS_ROOT` (or the matching CLI options).
 
 `testcase:gen*` preflights every generated output (dry-run included) and only
 writes regular files lexically beneath `<projectRoot>/tests/e2e` — absolute

@@ -13,7 +13,7 @@ testkit testcase:gen:dry --tests-root=/path/to/tests-hub --docs-root=/path/to/do
 testkit testcase:gen --tests-root=/path/to/tests-hub --docs-root=/path/to/docs-hub -- --id TC-…
 ```
 
-Do not assume sibling `../base-tests`. Plans remain on the tests hub.
+Use `TESTKIT_TESTS_ROOT` (or `--tests-root`) when the tests hub is not local.
 
 ## Accelerators (optional)
 

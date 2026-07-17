@@ -4,7 +4,7 @@ set -euo pipefail
 REPO="${TESTKIT_REPO:-raintr91/Testkit}"
 INSTALL_DIR="${TESTKIT_INSTALL_DIR:-$HOME/.testkit}"
 BIN_DIR="${TESTKIT_BIN_DIR:-$HOME/.local/bin}"
-REF="${TESTKIT_REF:-v0.2.3}"
+REF="${TESTKIT_REF:-v0.2.4}"
 
 if [ "${1:-}" = "--uninstall" ]; then
   rm -f "$BIN_DIR/testkit" "$BIN_DIR/testkit-mcp"

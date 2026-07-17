@@ -1,11 +1,11 @@
-# Plans readiness (base-tests)
+# Tests hub plans readiness
 
 **Who:** `/testcase`, `/grill-testcase`  
 **Not:** FE `/test` Playwright gen
 
 ## Gate
 
-1. [ ] Design `W-*` / rules / acceptance tồn tại trên **base-docs** (SSOT)
+1. [ ] Design `W-*` / rules / acceptance tồn tại trên **docs hub** (SSOT)
 2. [ ] `CAP-*` + `SC-*` (GWT + examples + coverage_plan)
 3. [ ] Mỗi `TC-*` dùng `coverage[]` (không `type`); refs + bridge FE đủ gen
 4. [ ] `registries/tests-index.json` cập nhật

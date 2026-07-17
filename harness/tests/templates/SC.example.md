@@ -14,7 +14,7 @@ coverage_plan:
 # SC-EXAMPLE — _Tên scenario tiếng Việt_
 
 Scenario dưới **CMP-*** · capability **CAP-***.  
-Rule chi tiết trên **base-docs** (chỉ cite id).
+Rule chi tiết trên **docs hub** (chỉ cite id).
 
 | | |
 |--|--|

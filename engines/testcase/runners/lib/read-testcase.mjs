@@ -4,6 +4,18 @@ import { parse } from 'yaml'
 import { resolveFeatureDir } from './read-spec.mjs'
 import { resolveHubId, resolveProjectRoot } from './resolve-hub-id.mjs'
 
+let docsEnrichmentWarningEmitted = false
+
+function warnDocsEnrichmentUnavailable(error) {
+  if (docsEnrichmentWarningEmitted) return
+  docsEnrichmentWarningEmitted = true
+  const reason = String(error?.message ?? error ?? 'docs hub input is unavailable').replace(/\s+/g, ' ')
+  console.warn(
+    `  warn: optional docs enrichment unavailable (${reason}); testcase generation continues without docs hub ir/spec.yaml context. ` +
+      'Set TESTKIT_DOCS_ROOT to a valid docs hub to enable enrichment.',
+  )
+}
+
 /**
  * Normalize hub R3 cases for testcase:gen.
  * Supports coverage[] (R3.2), testData→data, a11y / #e2e:a11y-wcag.
@@ -88,7 +100,7 @@ export function normalizeTestcaseForGen(testcase) {
 }
 
 /**
- * Resolve design ir/spec.yaml from refs.screen (base-docs) for enrichment.
+ * Resolve optional design ir/spec.yaml from refs.screen for docs hub enrichment.
  * @param {string} repoRoot
  * @param {Record<string, unknown>} testcase
  */
@@ -98,7 +110,7 @@ async function loadDesignSpec(repoRoot, testcase) {
   try {
     const resolved = resolveHubId(repoRoot, screen, 'codegen')
     const abs = resolved.paths?.[0]
-    if (!abs) return { spec: null, specFile: null, featureDir: null }
+    if (!abs) throw new Error(`No docs hub ir/spec.yaml resolved for ${screen}`)
     const raw = await readFile(abs, 'utf8')
     const spec = parse(raw) ?? {}
     return {
@@ -106,7 +118,8 @@ async function loadDesignSpec(repoRoot, testcase) {
       specFile: path.relative(repoRoot, abs),
       featureDir: resolveFeatureDir(abs),
     }
-  } catch {
+  } catch (error) {
+    warnDocsEnrichmentUnavailable(error)
     return { spec: null, specFile: null, featureDir: null }
   }
 }
@@ -143,7 +156,7 @@ export async function readTestcaseFile(testcasePath, opts = {}) {
 }
 
 /**
- * List TC-*.yaml under base-tests/cases/{screenId}/ (prefer --id).
+ * List TC-*.yaml under the tests hub cases/{screenId}/ (prefer --id).
  * @param {string} root FE repo root
  * @param {string} screenId e.g. W-AD-AUTH-001
  */
