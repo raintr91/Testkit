@@ -10,7 +10,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/raintr91/testkit.git"
+    "url": "git+https://github.com/raintr91/Testkit.git"
   },
   "files": [
     "bin",

@@ -18,7 +18,7 @@ if ($Uninstall) {
 }
 
 $TempDir = Join-Path ([System.IO.Path]::GetTempPath()) ("testkit-" + [guid]::NewGuid())
-git clone --depth 1 --branch $Ref "https://github.com/raintr91/testkit.git" $TempDir
+git clone --depth 1 --branch $Ref "https://github.com/raintr91/Testkit.git" $TempDir
 Remove-Item $InstallDir -Recurse -Force -ErrorAction SilentlyContinue
 Move-Item $TempDir $InstallDir
 Push-Location $InstallDir

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="${TESTKIT_REPO:-raintr91/testkit}"
+REPO="${TESTKIT_REPO:-raintr91/Testkit}"
 INSTALL_DIR="${TESTKIT_INSTALL_DIR:-$HOME/.testkit}"
 BIN_DIR="${TESTKIT_BIN_DIR:-$HOME/.local/bin}"
 REF="${TESTKIT_REF:-main}"
