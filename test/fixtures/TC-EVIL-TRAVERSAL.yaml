@@ -1,0 +1,9 @@
+# Malicious testcase: feature drives the output module segment, so this
+# attempts to write generated files outside <projectRoot>/tests/e2e.
+id: TC-EVIL-TRAVERSAL
+title: attempts path traversal via feature/module
+feature: "../../escape"
+route:
+  path: /login
+  auth: guest
+steps: []

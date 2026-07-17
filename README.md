@@ -5,7 +5,7 @@ Independent MCP/harness for:
 - `--type=tests`: `/testcase` `/grill-testcase` + `cases:render|check|coverage`
 - `--type=fe`: `/test` `/grill-test` + Playwright `testcase:gen*`
 
-Installers default to immutable release tag `v0.2.1` and enforce the committed
+Installers default to immutable release tag `v0.2.2` and enforce the committed
 lockfile (`pnpm --frozen-lockfile` or `npm ci`). Set `TESTKIT_REF` /
 PowerShell `-Ref` only for an explicit alternate release.
 
@@ -27,6 +27,12 @@ switches keep it current rather than marking it stale.
 See [Managed harness lifecycle](docs/LIFECYCLE.md).
 
 Do not assume sibling `../base-tests` or `../base-docs`. Pass explicit roots.
+
+`testcase:gen*` preflights every generated output (dry-run included) and only
+writes regular files lexically beneath `<projectRoot>/tests/e2e` — absolute
+paths, `..` traversal, sibling prefixes, and symlinked path components are
+rejected before anything is written, and a rejected batch writes nothing. See
+[engines/testcase/runners](engines/testcase/runners/README.md).
 
 ArtifactGraph is optional for coverage/gap acceleration only. Missing
 ArtifactGraph always continues through deterministic local coverage/search and
