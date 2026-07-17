@@ -4,7 +4,7 @@ set -euo pipefail
 REPO="${TESTKIT_REPO:-raintr91/Testkit}"
 INSTALL_DIR="${TESTKIT_INSTALL_DIR:-$HOME/.testkit}"
 BIN_DIR="${TESTKIT_BIN_DIR:-$HOME/.local/bin}"
-REF="${TESTKIT_REF:-main}"
+REF="${TESTKIT_REF:-v0.2.1}"
 
 if [ "${1:-}" = "--uninstall" ]; then
   rm -f "$BIN_DIR/testkit" "$BIN_DIR/testkit-mcp"
@@ -25,10 +25,10 @@ mv "$tmpdir/src" "$INSTALL_DIR"
 cd "$INSTALL_DIR"
 
 if command -v pnpm >/dev/null; then
-  pnpm install
+  pnpm install --frozen-lockfile
   pnpm build
 else
-  npm install
+  npm ci
   npm run build
 fi
 
