@@ -1,6 +1,6 @@
 {
   "name": "@platform/testkit",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "Local MCP: testcase plans render and FE Playwright generation",
   "type": "module",
   "main": "./dist/index.js",
@@ -36,6 +36,7 @@
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.29.0",
+    "ajv": "^8.20.0",
     "handlebars": "^4.7.8",
     "yaml": "^2.9.0",
     "zod": "^4.4.3"

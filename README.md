@@ -5,7 +5,7 @@ Independent MCP/harness for:
 - `--type=tests`: `/testcase` `/grill-testcase` + `cases:render|check|coverage`
 - `--type=fe`: `/test` `/grill-test` + Playwright `testcase:gen*`
 
-Installers default to immutable release tag `v0.2.2` and enforce the committed
+Installers default to immutable release tag `v0.2.3` and enforce the committed
 lockfile (`pnpm --frozen-lockfile` or `npm ci`). Set `TESTKIT_REF` /
 PowerShell `-Ref` only for an explicit alternate release.
 

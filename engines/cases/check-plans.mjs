@@ -1,26 +1,28 @@
 #!/usr/bin/env node
 /**
- * Validate TC-*.yaml against schemas/testcase.schema.json (lightweight, no ajv).
- * Usage: pnpm check:plans
+ * Validate TC-*.yaml against schemas/testcase.schema.json (package SSOT).
+ * Usage: pnpm check:plans  |  testkit cases:check
  */
 import { readdir, readFile } from 'node:fs/promises'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
+import Ajv2020 from 'ajv/dist/2020.js'
 import { parse } from 'yaml'
 
 const root = process.cwd()
-const COVERAGE = new Set([
-  'happy',
-  'validation',
-  'boundary',
-  'authorization',
-  'state',
-  'exception',
-  'concurrency',
-  'audit',
-  'accessibility',
-])
+const packageRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..')
+
+function resolveSchemaPath() {
+  if (process.env.TESTKIT_TESTCASE_SCHEMA) {
+    return path.resolve(process.env.TESTKIT_TESTCASE_SCHEMA)
+  }
+  return path.join(packageRoot, 'schemas', 'testcase.schema.json')
+}
 
 async function main() {
+  const schemaPath = resolveSchemaPath()
+  const schema = JSON.parse(await readFile(schemaPath, 'utf8'))
+  const validate = new Ajv2020({ allErrors: true }).compile(schema)
   const files = await listCaseYaml(path.join(root, 'cases'))
   const errors = []
   for (const file of files) {
@@ -32,7 +34,9 @@ async function main() {
       errors.push(`${rel}: YAML parse — ${e.message}`)
       continue
     }
-    errors.push(...validateCase(data, rel))
+    if (!validate(data)) {
+      errors.push(...(validate.errors ?? []).map((error) => formatValidationError(rel, error)))
+    }
   }
   if (errors.length) {
     console.error('check:plans FAILED')
@@ -42,32 +46,17 @@ async function main() {
   console.log(`check:plans OK (${files.length} case(s))`)
 }
 
-function validateCase(tc, rel) {
-  const err = []
-  if (!tc?.id || !/^TC-[A-Z0-9-]+$/.test(tc.id)) err.push(`${rel}: id must match TC-*`)
-  if (!tc?.title) err.push(`${rel}: title required`)
-  if ('type' in (tc || {})) err.push(`${rel}: type is removed — use coverage[]`)
-  if (!Array.isArray(tc?.coverage) || !tc.coverage.length) {
-    err.push(`${rel}: coverage[] required`)
-  } else {
-    for (const c of tc.coverage) {
-      if (!COVERAGE.has(c)) err.push(`${rel}: unknown coverage "${c}"`)
-    }
+function formatValidationError(rel, error) {
+  const location = error.instancePath
+    .split('/')
+    .filter(Boolean)
+    .map((part) => part.replaceAll('~1', '/').replaceAll('~0', '~'))
+    .join('.')
+  if (error.keyword === 'required') {
+    const field = [location, error.params.missingProperty].filter(Boolean).join('.')
+    return `${rel}: ${field} required`
   }
-  const refs = tc?.refs || {}
-  for (const k of ['screen', 'scenario', 'target']) {
-    if (!refs[k]) err.push(`${rel}: refs.${k} required`)
-  }
-  if (!refs.capability) err.push(`${rel}: refs.capability required`)
-  if (!refs.component && !refs.feature) err.push(`${rel}: refs.component or refs.feature required`)
-  if (tc?.genType !== 'e2e') err.push(`${rel}: genType must be e2e`)
-  if (!tc?.feature) err.push(`${rel}: feature (bridge slug) required`)
-  if (!tc?.route?.path) err.push(`${rel}: route.path required`)
-  if (!tc?.testIds || typeof tc.testIds !== 'object') err.push(`${rel}: testIds required`)
-  if (tc.coverage?.includes('accessibility') && !tc.a11y) {
-    err.push(`${rel}: coverage accessibility requires a11y: block`)
-  }
-  return err
+  return `${rel}${location ? `: ${location}` : ''}: ${error.message}`
 }
 
 async function listCaseYaml(dir) {
@@ -92,6 +81,7 @@ async function listEntries(dir) {
 }
 
 main().catch((e) => {
-  console.error(e)
+  console.error('check:plans FAILED')
+  console.error(`  - ${e.message}`)
   process.exit(1)
 })

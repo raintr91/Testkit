@@ -3,7 +3,7 @@
   "$id": "https://base-tests.local/schemas/testcase.schema.json",
   "title": "base-tests TC YAML",
   "type": "object",
-  "required": ["id", "title", "coverage", "refs", "genType", "route", "testIds"],
+  "required": ["id", "title", "coverage", "refs", "genType", "feature", "route", "testIds"],
   "additionalProperties": true,
   "properties": {
     "id": { "type": "string", "pattern": "^TC-[A-Z0-9-]+$" },
@@ -34,7 +34,11 @@
     },
     "refs": {
       "type": "object",
-      "required": ["screen", "scenario", "target"],
+      "required": ["capability", "screen", "scenario", "target"],
+      "anyOf": [
+        { "required": ["component"] },
+        { "required": ["feature"] }
+      ],
       "properties": {
         "capability": { "type": "string" },
         "component": { "type": "string" },
@@ -83,5 +87,13 @@
     "dimensions": { "type": "object" },
     "scenario": { "type": "string" },
     "category": { "type": "string" }
-  }
+  },
+  "if": {
+    "properties": {
+      "coverage": {
+        "contains": { "const": "accessibility" }
+      }
+    }
+  },
+  "then": { "required": ["a11y"] }
 }
