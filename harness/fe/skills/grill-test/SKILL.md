@@ -13,9 +13,12 @@ After `/test`. Plan YAML remains on the tests hub (`/grill-testcase`).
 ## Accelerators (optional)
 
 ```text
-if ArtifactGraph available: recommend/check testcase gen
+if local ArtifactGraph available: recommend/check testcase gen (this repo)
 else: local deterministic search, then testkit testcase:gen:dry …
 ```
+
+ArtifactGraph never follows `TESTKIT_DOCS_ROOT` / `TESTKIT_TESTS_ROOT`; plan
+YAML and docs evidence flow only through those Testkit pointers.
 
 Use one stable `runId` per run. When ArtifactGraph is missing, finish the local
 fallback before emitting exactly one `testkit.missing-optional` event for that

@@ -19,9 +19,13 @@ testkit cases:check -- …
 ## Accelerators (optional)
 
 ```text
-if ArtifactGraph available: coverage/gap hints
+if local ArtifactGraph available: taxonomy/coverage/gap hints from this tests hub
 else: local deterministic coverage/search from scoped plan + docs evidence
 ```
+
+ArtifactGraph on the tests hub uses `--type=common,test` (installs the testcase
+taxonomy) and indexes this repo only. Docs-hub design evidence comes through
+explicit docs references, never through ArtifactGraph.
 
 At run start, assign one stable `runId`. If ArtifactGraph is missing, complete
 the local fallback, count successful file reads and exact raw bytes read into

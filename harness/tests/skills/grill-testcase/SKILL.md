@@ -13,9 +13,12 @@ Audit plans only. Spec holes hand off to docs-hub `/update-spec` (Bundlekit), ne
 ## Accelerators (optional)
 
 ```text
-if ArtifactGraph available: coverage/gap slice
+if local ArtifactGraph available: taxonomy/coverage/gap slice from this tests hub
 else: local deterministic coverage/search over targeted plan/docs evidence
 ```
+
+ArtifactGraph indexes this tests hub only; spec-hole handoffs go to docs-hub
+`/update-spec` (Bundlekit), not through ArtifactGraph.
 
 Use one stable `runId` per run. When ArtifactGraph is missing, finish the local
 fallback before emitting exactly one `testkit.missing-optional` event for that

@@ -35,6 +35,9 @@ paths, `..` traversal, sibling prefixes, and symlinked path components are
 rejected before anything is written, and a rejected batch writes nothing. See
 [engines/testcase/runners](engines/testcase/runners/README.md).
 
-ArtifactGraph is optional for coverage/gap acceleration only. Missing
-ArtifactGraph always continues through deterministic local coverage/search and
-uses the [missing-optional event contract](docs/OPTIONAL-ACCELERATORS.md).
+ArtifactGraph is optional for coverage/gap acceleration only, and local-only:
+on the tests hub install it with `--type=common,test`; it never follows
+`TESTKIT_DOCS_ROOT` / `TESTKIT_TESTS_ROOT` (cross-repo evidence flows through
+the Testkit pointers). Missing ArtifactGraph always continues through
+deterministic local coverage/search and uses the
+[missing-optional event contract](docs/OPTIONAL-ACCELERATORS.md).

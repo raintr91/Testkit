@@ -18,9 +18,12 @@ Use `TESTKIT_TESTS_ROOT` (or `--tests-root`) when the tests hub is not local.
 ## Accelerators (optional)
 
 ```text
-if ArtifactGraph available: recommend/check generation allowlist
+if local ArtifactGraph available: recommend/check generation allowlist (this repo)
 else: local deterministic search, then run testkit testcase:gen directly
 ```
+
+ArtifactGraph never follows `TESTKIT_DOCS_ROOT` / `TESTKIT_TESTS_ROOT`; plan
+YAML and docs evidence flow only through those Testkit pointers.
 
 Assign one stable `runId` at run start. If ArtifactGraph is missing, complete
 the local fallback, count successful file reads and exact raw bytes read into

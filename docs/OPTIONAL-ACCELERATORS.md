@@ -1,7 +1,16 @@
 # Optional accelerators
 
 ArtifactGraph may accelerate Testkit coverage and search, but its absence must
-never stop a tests or FE workflow. Each run:
+never stop a tests or FE workflow.
+
+**Lane placement.** On the tests hub install `artifactgraph init
+--target=cursor --type=common,test` — it indexes that repo's own plans and
+testcase taxonomy. On FE it is rarely needed (local allowlist hints only).
+ArtifactGraph is standalone per repo: it does **not** follow
+`TESTKIT_DOCS_ROOT` or `TESTKIT_TESTS_ROOT`. Canonical docs/tests-hub evidence
+always flows through those Testkit pointers.
+
+Each run:
 
 1. assigns one stable `runId`;
 2. completes deterministic local coverage/search when ArtifactGraph is missing;

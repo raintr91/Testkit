@@ -10,6 +10,11 @@ missing or fails, continue with deterministic local coverage/search. Assign one
 stable `runId` per run and emit exactly one `testkit.missing-optional` event per
 `runId` + optional pair, after fallback completes; deduplicate all retries.
 
+ArtifactGraph is local-only: in this repo it indexes this repo's own data
+(taxonomy/coverage hints) and never follows `TESTKIT_DOCS_ROOT` or
+`TESTKIT_TESTS_ROOT`. Canonical docs/tests-hub evidence always flows through
+those Testkit pointers, never through ArtifactGraph.
+
 Events must conform to
 `.cursor/schemas/testkit/missing-optional-event.schema.json`. Metrics count only
 successful file reads and exact raw bytes read into context as `fileReads` and
