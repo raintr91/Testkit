@@ -12,7 +12,6 @@ import {
   statusHarness,
   type HarnessStatus,
 } from './install/harness.js'
-import { mergePlatformRepos } from './install/platform-repos.js'
 import { runEngine } from './engines/run.js'
 
 function arg(name: string): string | undefined {
@@ -92,9 +91,6 @@ async function main(): Promise<void> {
       console.log(`stale: ${lifecycle.stale.length}`)
       console.log(`review: testkit prune --project-root ${JSON.stringify(root)}`)
     }
-    const maps = mergePlatformRepos({ projectRoot: root, type })
-    console.log(`updated: ${maps.path}`)
-    for (const warning of maps.warnings) console.warn(`warning: ${warning}`)
     return
   }
 

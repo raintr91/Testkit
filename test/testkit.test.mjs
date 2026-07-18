@@ -14,13 +14,11 @@ import {
   statusHarness,
   validateMissingOptionalEvent,
 } from '../dist/index.js'
-import { mergePlatformRepos } from '../dist/install/platform-repos.js'
 import { installCursorMcp } from '../dist/install/cursor-mcp.js'
 
 test('tests profile syncs plan skills only', () => {
   const root = mkdtempSync(path.join(os.tmpdir(), 'testkit-tests-'))
   installHarness({ projectRoot: root, type: 'tests' })
-  mergePlatformRepos({ projectRoot: root, type: 'tests' })
   for (const skill of SKILLS_BY_TYPE.tests) {
     assert.ok(existsSync(path.join(root, '.cursor', 'skills', skill, 'SKILL.md')))
   }
@@ -33,8 +31,8 @@ test('tests profile syncs plan skills only', () => {
   assert.ok(
     existsSync(path.join(root, '.cursor', 'rules', 'testkit-optional-accelerators.mdc')),
   )
-  const platform = JSON.parse(readFileSync(path.join(root, 'platform-repos.json'), 'utf8'))
-  assert.deepEqual(platform.harness.profiles.tests.skills, SKILLS_BY_TYPE.tests)
+  // Testkit never writes Platform DNA-owned project maps.
+  assert.equal(existsSync(path.join(root, 'platform-repos.json')), false)
 })
 
 test('fe profile syncs playwright skills only and keeps explicit roots', () => {
