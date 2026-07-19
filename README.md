@@ -15,6 +15,8 @@ testkit init --type=fe --tests-root=/path/to/tests-hub --docs-root=/path/to/docs
 testkit status
 testkit prune             # dry-run; changes nothing
 testkit prune --yes       # delete only unmodified stale managed files
+testkit deinit            # preview current repo harness + local MCP removal
+testkit uninstall         # preview global removal: all repos + MCP + CLI
 ```
 
 Switching between `tests` and `fe` keeps targets from the previous profile in
@@ -25,6 +27,23 @@ The Testkit-owned optional-event schema is shared by both profiles at
 `.cursor/schemas/testkit/missing-optional-event.schema.json`, so profile
 switches keep it current rather than marking it stale.
 See [Managed harness lifecycle](docs/LIFECYCLE.md).
+
+`init` records each destination in the Testkit install ledger at
+`$XDG_STATE_HOME/testkit/installs.json` (or
+`~/.local/state/testkit/installs.json`). This lets `testkit uninstall` run from
+any directory and remove every tracked harness, its local Cursor MCP wiring,
+global Cursor MCP wiring, and the CLI. Both removal commands preview and prompt
+in a TTY, and otherwise remain dry-run unless `--yes` is passed. For installs
+created before the ledger existed, use:
+
+```bash
+testkit uninstall --discover ~/workspace --yes
+```
+
+Uninstall deletes only files whose hashes still match the compatible install
+manifest. Modified files are preserved and reported. Shared MCP configuration
+is unmerged by deleting only `mcpServers.testkit`; other entries—including
+ArtifactGraph—are retained. ArtifactGraph-owned assets are never removed.
 
 Configure non-local hubs explicitly with `TESTKIT_TESTS_ROOT` and
 `TESTKIT_DOCS_ROOT` (or the matching CLI options).

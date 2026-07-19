@@ -3,13 +3,18 @@ import {
   mkdirSync,
   readFileSync,
   readdirSync,
+  realpathSync,
   rmSync,
+  rmdirSync,
   statSync,
   writeFileSync,
 } from 'node:fs'
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { packageRoot, packageVersion, type TestkitType } from '../config/project-root.js'
+import { forgetInstall, recordInstall } from './ledger.js'
+
+export const INSTALL_MANIFEST_PATH = '.testkit/install-manifest.json'
 
 export const SKILLS_BY_TYPE: Record<TestkitType, string[]> = {
   tests: ['testcase', 'grill-testcase'],
@@ -54,7 +59,19 @@ export interface PruneHarnessResult {
   candidates: string[]
   deleted: string[]
   preservedModified: string[]
+  preservedProtected: string[]
   missing: string[]
+}
+
+export interface UninstallHarnessResult {
+  dryRun: boolean
+  manifest: string
+  wouldDelete: string[]
+  deleted: string[]
+  preservedModified: string[]
+  preservedProtected: string[]
+  missing: string[]
+  manifestRemoved: boolean
 }
 
 function hash(content: string): string {
@@ -73,7 +90,7 @@ function walk(root: string): string[] {
 }
 
 function manifestFile(root: string): string {
-  return path.join(root, '.testkit', 'install-manifest.json')
+  return path.join(root, ...INSTALL_MANIFEST_PATH.split('/'))
 }
 
 function loadManifest(root: string): InstallManifest | null {
@@ -108,6 +125,31 @@ function managedTarget(root: string, targetRel: string): string | null {
   return relative !== '' && !relative.startsWith(`..${path.sep}`) && relative !== '..' && !path.isAbsolute(relative)
     ? target
     : null
+}
+
+function safeManagedTarget(root: string, targetRel: string): string | null {
+  const target = managedTarget(root, targetRel)
+  if (!target) return null
+  let existing = target
+  while (!existsSync(existing) && existing !== root) existing = path.dirname(existing)
+  try {
+    const realRoot = realpathSync(root)
+    const realExisting = realpathSync(existing)
+    const relative = path.relative(realRoot, realExisting)
+    if (relative === '..' || relative.startsWith(`..${path.sep}`) || path.isAbsolute(relative)) {
+      return null
+    }
+  } catch {
+    return null
+  }
+  return target
+}
+
+function isArtifactGraphOwned(targetRel: string): boolean {
+  return targetRel
+    .toLowerCase()
+    .split(/[\\/]/)
+    .some((part) => part.includes('artifactgraph'))
 }
 
 function targetHash(target: string): string | null {
@@ -196,6 +238,7 @@ export function installHarness(opts: {
       2,
     )}\n`,
   )
+  recordInstall(root)
   return result
 }
 
@@ -247,11 +290,16 @@ export function pruneHarness(opts: { projectRoot: string; yes?: boolean }): Prun
     candidates: [],
     deleted: [],
     preservedModified: [],
+    preservedProtected: [],
     missing: [],
   }
   for (const [targetRel, metadata] of Object.entries(manifest.files)) {
-    if (currentTargets.has(targetRel)) continue
-    const target = managedTarget(root, targetRel)
+    if (!metadata.stale || currentTargets.has(targetRel)) continue
+    if (isArtifactGraphOwned(targetRel)) {
+      result.preservedProtected.push(targetRel)
+      continue
+    }
+    const target = safeManagedTarget(root, targetRel)
     if (!target || !existsSync(target)) {
       result.missing.push(targetRel)
       continue
@@ -270,5 +318,87 @@ export function pruneHarness(opts: { projectRoot: string; yes?: boolean }): Prun
   if (opts.yes && result.deleted.length > 0) {
     writeFileSync(manifestFile(root), `${JSON.stringify(manifest, null, 2)}\n`)
   }
+  return result
+}
+
+function pruneEmptyDirs(root: string, files: string[]): void {
+  const directories = new Set<string>()
+  for (const file of files) {
+    let directory = path.dirname(file)
+    while (directory !== root && managedTarget(root, path.relative(root, directory))) {
+      directories.add(directory)
+      directory = path.dirname(directory)
+    }
+  }
+  for (const directory of [...directories].sort((a, b) => b.length - a.length)) {
+    try {
+      if (existsSync(directory) && readdirSync(directory).length === 0) rmdirSync(directory)
+    } catch {
+      // Leave non-empty or busy directories.
+    }
+  }
+}
+
+/**
+ * Remove only Testkit assets recorded by a compatible manifest. Modified files
+ * and any path that could belong to ArtifactGraph are always preserved.
+ */
+export function uninstallHarness(opts: {
+  projectRoot: string
+  yes?: boolean
+}): UninstallHarnessResult {
+  const root = path.resolve(opts.projectRoot)
+  const manifestPath = manifestFile(root)
+  const manifest = loadManifest(root)
+  const result: UninstallHarnessResult = {
+    dryRun: !opts.yes,
+    manifest: manifestPath,
+    wouldDelete: [],
+    deleted: [],
+    preservedModified: [],
+    preservedProtected: [],
+    missing: [],
+    manifestRemoved: false,
+  }
+  if (!manifest) return result
+  const check = compatibility(manifest)
+  if (!check.compatible) {
+    throw new Error(`Incompatible Testkit install manifest: ${check.issues.join('; ')}`)
+  }
+
+  for (const [targetRel, metadata] of Object.entries(manifest.files)) {
+    if (isArtifactGraphOwned(targetRel)) {
+      result.preservedProtected.push(targetRel)
+      continue
+    }
+    const target = safeManagedTarget(root, targetRel)
+    if (!target || !existsSync(target)) {
+      result.missing.push(targetRel)
+      continue
+    }
+    if (targetHash(target) !== metadata.sha256) {
+      result.preservedModified.push(targetRel)
+      continue
+    }
+    if (result.dryRun) result.wouldDelete.push(targetRel)
+    else {
+      rmSync(target)
+      result.deleted.push(targetRel)
+    }
+  }
+
+  if (result.dryRun) {
+    result.wouldDelete.push(INSTALL_MANIFEST_PATH)
+    return result
+  }
+  if (existsSync(manifestPath)) {
+    rmSync(manifestPath)
+    result.manifestRemoved = true
+  }
+  forgetInstall(root)
+  pruneEmptyDirs(
+    root,
+    [...result.deleted, INSTALL_MANIFEST_PATH].map((relative) => path.join(root, relative)),
+  )
   return result
 }

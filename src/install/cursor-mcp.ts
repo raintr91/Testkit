@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import os from 'node:os'
 import path from 'node:path'
 import { packageRoot } from '../config/project-root.js'
 import type { TestkitType } from '../config/project-root.js'
@@ -39,4 +40,63 @@ export function installCursorMcp(opts: {
   config.mcpServers.testkit = entry
   writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`)
   return { path: file, written: true }
+}
+
+export type McpLocation = 'local' | 'global'
+
+export interface UninstallCursorMcpResult {
+  path: string
+  dryRun: boolean
+  removed: boolean
+  absent: boolean
+  preservedInvalid: boolean
+}
+
+export function cursorMcpPath(opts: {
+  location: McpLocation
+  projectRoot?: string
+}): string {
+  if (opts.location === 'global') {
+    return process.env.TESTKIT_GLOBAL_MCP_FILE
+      ? path.resolve(process.env.TESTKIT_GLOBAL_MCP_FILE)
+      : path.join(os.homedir(), '.cursor', 'mcp.json')
+  }
+  return path.join(path.resolve(opts.projectRoot ?? process.cwd()), '.cursor', 'mcp.json')
+}
+
+/** Remove only the Testkit key, preserving every other MCP server and setting. */
+export function uninstallCursorMcp(opts: {
+  location: McpLocation
+  projectRoot?: string
+  yes?: boolean
+}): UninstallCursorMcpResult {
+  const file = cursorMcpPath(opts)
+  const result: UninstallCursorMcpResult = {
+    path: file,
+    dryRun: !opts.yes,
+    removed: false,
+    absent: false,
+    preservedInvalid: false,
+  }
+  if (!existsSync(file)) {
+    result.absent = true
+    return result
+  }
+  let config: { mcpServers?: Record<string, unknown> }
+  try {
+    config = JSON.parse(readFileSync(file, 'utf8')) as typeof config
+  } catch {
+    result.preservedInvalid = true
+    return result
+  }
+  if (!config.mcpServers || !('testkit' in config.mcpServers)) {
+    result.absent = true
+    return result
+  }
+  result.removed = true
+  if (opts.yes) {
+    delete config.mcpServers.testkit
+    writeFileSync(file, `${JSON.stringify(config, null, 2)}\n`, 'utf8')
+  }
+  return result
 }
