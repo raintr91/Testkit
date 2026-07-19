@@ -14,6 +14,10 @@ testkit testcase:gen --tests-root=/path/to/tests-hub --docs-root=/path/to/docs-h
 ```
 
 Use `TESTKIT_TESTS_ROOT` (or `--tests-root`) when the tests hub is not local.
+Use `TESTKIT_DOCS_ROOT` for docs evidence. Route architecture/C4 through
+Hubdocs, and symbols or call graphs for repo X through the Platform DNA-wired
+`codegraph-<repo-key>` server for checkout X. Never use a workspace-parent
+graph or ask the member to hand-edit MCP configuration.
 
 ## Accelerators (optional)
 

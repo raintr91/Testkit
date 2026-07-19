@@ -10,6 +10,11 @@ disable-model-invocation: true
 
 Audit plans only. Spec holes hand off to docs-hub `/update-spec` (Bundlekit), never invent acceptance.
 
+Route architecture/C4 evidence through Hubdocs and symbol/call-graph evidence
+for repo X through its Platform DNA-wired `codegraph-<repo-key>` server. Use
+`TESTKIT_DOCS_ROOT` / `TESTKIT_TESTS_ROOT` for pointer evidence; never build or
+query a workspace-parent graph.
+
 ## Accelerators (optional)
 
 ```text

@@ -1,6 +1,6 @@
 param(
   [string]$InstallDir = "$HOME\.testkit",
-  [string]$Ref = "v0.2.4",
+  [string]$Ref = "v0.3.0",
   [ValidateSet("tests", "fe")]
   [string]$Type = "tests",
   [switch]$Uninstall
@@ -38,4 +38,6 @@ New-Item -ItemType Directory -Force $BinDir | Out-Null
   Set-Content "$BinDir\testkit-mcp.cmd"
 
 Write-Host "Installed Testkit. Next:"
-Write-Host "  testkit init --type=$Type --yes"
+Write-Host "  cd /path/to/your/tests-or-fe-repo"
+Write-Host "  testkit init                 # agents → lane → local MCP + harness"
+Write-Host "  # testkit init --yes         # CI: detected agents + tests lane"

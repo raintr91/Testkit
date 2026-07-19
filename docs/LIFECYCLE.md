@@ -1,8 +1,8 @@
 # Managed harness lifecycle
 
-Testkit owns only the harness paths recorded in a compatible
-`.testkit/install-manifest.json`. Lifecycle commands never remove unrecorded
-files or ArtifactGraph-owned assets.
+Testkit owns only the harness paths and managed repo-file entries recorded in a
+compatible `.testkit/install-manifest.json`. Lifecycle commands never remove
+unrecorded files, member-modified values, or ArtifactGraph-owned assets.
 
 ## Status
 
@@ -67,15 +67,35 @@ The first configured location wins. `--discover <dir>` scans for compatible
 manifest locations from older, ledger-less installs.
 
 `deinit` is the inverse of `init` for one repo: it removes hash-matching current
-and stale Testkit harness files, the manifest, and only the `testkit` key from
-the repo's `.cursor/mcp.json`. `uninstall` performs that operation for every
-ledger/discovery destination, removes only the global `testkit` MCP key, then
-removes the Testkit CLI links/tree and ledger.
+and stale Testkit harness files, matching Testkit-owned package scripts and
+the manifest, and Testkit MCP entries from every supported project-local agent
+config. Generated-target `.gitignore` entries are retained because shared
+targets such as `.cursor/` may still belong to another toolkit. `uninstall`
+performs that operation for every
+ledger/discovery destination, removes the legacy global Cursor `testkit` MCP
+key, then removes the Testkit CLI links/tree and ledger.
 
 Member-modified files are preserved and reported. Invalid or shared
 configuration is never replaced wholesale: other MCP keys and settings remain
 untouched. Paths containing ArtifactGraph ownership markers are protected even
 if a malformed or historical Testkit manifest lists them.
+
+For the `tests` lane, the managed package aliases are `cases:render`,
+`check:plans`, and `check:coverage`. Existing conflicting scripts are reported
+and left unchanged. Testkit never copies `scripts/cases/*.mjs` or the
+pilot-specific `check:pilot` script into a destination repo.
+
+Each init records only `.cursor/`, `.testkit/`, and local config paths for the
+agents selected in that run. Global config paths and unselected agents are not
+added. `status` accepts equivalent root-anchored patterns such as `/.cursor/`
+and reports a missing generated-target ignore.
+
+When Cursor is selected, init also delegates cross-repo CodeGraph setup to
+Platform DNA's `codegraph:wire` command. The call is skipped safely when
+Platform DNA is not initialized or unavailable, and can be filtered with
+`--codegraph-repos=key,…` or disabled with `--no-codegraph`. Platform DNA
+retains ownership of `codegraph-*` MCP entries; Testkit deinit does not remove
+them.
 
 Advanced compatibility scopes are available through `--scope=repo`,
 `all-repos`, `mcp-local`, `mcp-global`, `cli`, or `all`.

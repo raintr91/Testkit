@@ -4,7 +4,7 @@ set -euo pipefail
 REPO="${TESTKIT_REPO:-raintr91/Testkit}"
 INSTALL_DIR="${TESTKIT_INSTALL_DIR:-$HOME/.testkit}"
 BIN_DIR="${TESTKIT_BIN_DIR:-$HOME/.local/bin}"
-REF="${TESTKIT_REF:-v0.2.4}"
+REF="${TESTKIT_REF:-v0.3.0}"
 
 if [ "${1:-}" = "--uninstall" ]; then
   rm -f "$BIN_DIR/testkit" "$BIN_DIR/testkit-mcp"
@@ -38,4 +38,6 @@ ln -sf "$INSTALL_DIR/bin/testkit-mcp.mjs" "$BIN_DIR/testkit-mcp"
 chmod +x "$INSTALL_DIR/bin/"*.mjs
 
 echo "Installed Testkit. Next:"
-echo "  testkit init --type=tests --yes"
+echo "  cd /path/to/your/tests-or-fe-repo"
+echo "  testkit init                 # agents → lane → local MCP + harness"
+echo "  # testkit init --yes         # CI: detected agents + tests lane"

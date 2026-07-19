@@ -1,5 +1,15 @@
 export { createServer } from './mcp/server.js'
 export {
+  AGENT_IDS,
+  agentConfigPath,
+  chooseAgentTargets,
+  detectAgents,
+  installAgents,
+  parseAgentTargets,
+  uninstallAgents,
+  type AgentId,
+} from './install/agents.js'
+export {
   INSTALL_MANIFEST_PATH,
   installHarness,
   pruneHarness,
@@ -22,6 +32,20 @@ export {
   removeLedger,
   stateDir,
 } from './install/ledger.js'
+export {
+  TESTKIT_PACKAGE_SCRIPTS,
+  canonicalGitignorePattern,
+  ensureGitignoreEntries,
+  generatedTargets,
+  managedRepoStatus,
+  removeManagedRepoFiles,
+  syncManagedRepoFiles,
+  type ManagedRepoFiles,
+} from './install/managed-files.js'
+export {
+  wirePlatformDnaCodegraph,
+  type PlatformDnaWireResult,
+} from './install/platform-dna.js'
 export { runEngine } from './engines/run.js'
 export {
   MissingOptionalEventEmitter,

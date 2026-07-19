@@ -7,7 +7,12 @@ import {
 import { lstatSync, realpathSync, rmSync } from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
-import { installCursorMcp, uninstallCursorMcp } from './install/cursor-mcp.js'
+import { uninstallCursorMcp } from './install/cursor-mcp.js'
+import {
+  chooseAgentTargets,
+  installAgents,
+  uninstallAgents,
+} from './install/agents.js'
 import {
   installHarness,
   pruneHarness,
@@ -17,6 +22,8 @@ import {
   type HarnessStatus,
 } from './install/harness.js'
 import { discoverInstalls, ledgerPath, readLedger, removeLedger } from './install/ledger.js'
+import { generatedTargets } from './install/managed-files.js'
+import { wirePlatformDnaCodegraph } from './install/platform-dna.js'
 import { selectPrompt } from './install/prompt.js'
 import { runEngine } from './engines/run.js'
 
@@ -33,13 +40,32 @@ function has(name: string): boolean {
 
 function passthrough(command: string): string[] {
   const index = process.argv.indexOf(command)
-  return index >= 0 ? process.argv.slice(index + 1) : process.argv.slice(3)
+  const values = index >= 0 ? process.argv.slice(index + 1) : process.argv.slice(3)
+  const separator = values.indexOf('--')
+  if (separator >= 0) return values.slice(separator + 1)
+  const result: string[] = []
+  for (let position = 0; position < values.length; position++) {
+    const value = values[position]!
+    if (['--project-root', '--tests-root', '--docs-root'].includes(value)) {
+      position++
+    } else if (
+      !value.startsWith('--project-root=')
+      && !value.startsWith('--tests-root=')
+      && !value.startsWith('--docs-root=')
+    ) {
+      result.push(value)
+    }
+  }
+  return result
 }
 
 function usage(): never {
   console.log(`testkit ${packageVersion()}
 
-  init --type=tests|fe [--project-root <path>] [--tests-root <path>] [--docs-root <path>] [--force] [--yes]
+  init [--target=auto|all|none|claude,cursor,codex,opencode,hermes,gemini,antigravity,kiro,kilo]
+       [--type=tests|fe] [--project-root <path>] [--tests-root <path>] [--docs-root <path>]
+       [--codegraph-repos=key,…] [--no-codegraph] [--force] [--yes]
+       # no flags → TTY wizard: agents → lane → local MCP + harness
   status [--project-root <path>]
   prune [--project-root <path>] [--yes]    # stale-only; dry-run unless --yes
   deinit [--project-root <path>] [--yes]   # current repo harness + local MCP
@@ -170,6 +196,17 @@ function runUninstallScope(scope: UninstallScope, flags: UninstallFlags): void {
     if (result.manifestRemoved) console.log(`  manifest removed: ${result.manifest}`)
   }
   const removeMcp = (location: 'local' | 'global', repo?: string): void => {
+    if (location === 'local') {
+      const result = uninstallAgents({
+        projectRoot: repo ?? root,
+        yes: flags.yes,
+      })
+      for (const entry of result.removed) {
+        console.log(`  ${flags.yes ? 'unwired' : 'would unwire'} MCP: ${entry}`)
+      }
+      if (result.removed.length === 0) console.log('  MCP (local): no testkit entries')
+      return
+    }
     const result = uninstallCursorMcp({
       location,
       projectRoot: repo,
@@ -279,20 +316,66 @@ async function main(): Promise<void> {
     return
   }
   if (command === 'init') {
-    const type = (arg('--type') ?? 'tests') as TestkitType
-    if (!['tests', 'fe'].includes(type)) throw new Error('--type must be tests | fe')
     const root = resolveProjectRoot(arg('--project-root'))
-    const mcp = installCursorMcp({
+    const interactiveAgents = !has('--yes')
+      && !arg('--target')
+      && Boolean(process.stdin.isTTY && process.stdout.isTTY)
+    const targets = await chooseAgentTargets({
+      projectRoot: root,
+      target: arg('--target'),
+      interactive: interactiveAgents,
+    })
+    let type = (arg('--type') ?? 'tests') as TestkitType
+    const interactiveLane = !has('--yes')
+      && !arg('--type')
+      && Boolean(process.stdin.isTTY && process.stdout.isTTY)
+    if (interactiveLane) {
+      type = await selectPrompt<TestkitType>({
+        message: 'Which Testkit lane?',
+        defaultIndex: 0,
+        choices: [
+          { value: 'tests', name: 'tests — testcase plans and coverage' },
+          { value: 'fe', name: 'fe — Playwright testcase generation' },
+        ],
+      })
+    }
+    if (!['tests', 'fe'].includes(type)) throw new Error('--type must be tests | fe')
+    const agents = installAgents({
       projectRoot: root,
       type,
+      targets,
       testsRoot: arg('--tests-root'),
       docsRoot: arg('--docs-root'),
     })
-    console.log(`${mcp.written ? 'wrote' : 'unchanged'}: ${mcp.path}`)
-    const harness = installHarness({ projectRoot: root, type, force: has('--force') })
+    console.log(`Wired Testkit → ${agents.targets.join(', ') || '(none)'} (local)`)
+    for (const written of agents.written) console.log(`  ${written.agent}: ${written.path}`)
+    const harness = installHarness({
+      projectRoot: root,
+      type,
+      force: has('--force'),
+      ignoreEntries: generatedTargets({
+        projectRoot: root,
+        agentPaths: agents.written.map((entry) => entry.path),
+      }),
+    })
     for (const file of harness.written) console.log(`  wrote: ${file}`)
     for (const file of harness.unchanged) console.log(`  unchanged: ${file}`)
     for (const file of harness.conflicts) console.log(`  conflict: ${file}`)
+    if (targets.includes('cursor') && !has('--no-codegraph')) {
+      const codegraph = wirePlatformDnaCodegraph({
+        projectRoot: root,
+        filterKeys: arg('--codegraph-repos'),
+      })
+      if (codegraph.stdout) process.stdout.write(codegraph.stdout)
+      if (codegraph.skipped === 'not-initialized') {
+        console.log('  codegraph: skipped — run `platform-dna init` in this repo first')
+      } else if (codegraph.skipped === 'command-unavailable') {
+        console.log('  codegraph: skipped — `platform-dna` CLI is not available on PATH')
+      } else if (codegraph.status !== 0) {
+        const detail = codegraph.stderr.trim()
+        console.error(`  codegraph: Platform DNA auto-wire failed${detail ? ` — ${detail}` : ''}`)
+      }
+    }
     const lifecycle = statusHarness({ projectRoot: root })
     if (lifecycle.stale.length > 0) {
       console.log(`stale: ${lifecycle.stale.length}`)

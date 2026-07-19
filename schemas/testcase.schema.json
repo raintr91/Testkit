@@ -91,6 +91,7 @@
   "if": {
     "properties": {
       "coverage": {
+        "type": "array",
         "contains": { "const": "accessibility" }
       }
     }

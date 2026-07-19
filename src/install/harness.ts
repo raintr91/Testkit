@@ -13,6 +13,12 @@ import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { packageRoot, packageVersion, type TestkitType } from '../config/project-root.js'
 import { forgetInstall, recordInstall } from './ledger.js'
+import {
+  managedRepoStatus,
+  removeManagedRepoFiles,
+  syncManagedRepoFiles,
+  type ManagedRepoFiles,
+} from './managed-files.js'
 
 export const INSTALL_MANIFEST_PATH = '.testkit/install-manifest.json'
 
@@ -35,6 +41,7 @@ export interface InstallManifest {
   toolApi: 1
   harnessApi: 1
   files: Record<string, InstallManifestFile>
+  managed?: ManagedRepoFiles
 }
 
 export interface HarnessCompatibility {
@@ -171,6 +178,12 @@ function compatibility(manifest: InstallManifest): HarnessCompatibility {
   if (!manifest.files || typeof manifest.files !== 'object' || Array.isArray(manifest.files)) {
     issues.push('invalid files inventory')
   }
+  if (
+    manifest.managed !== undefined
+    && (!manifest.managed || typeof manifest.managed !== 'object' || Array.isArray(manifest.managed))
+  ) {
+    issues.push('invalid managed repo files inventory')
+  }
   for (const [targetRel, metadata] of Object.entries(manifest.files ?? {})) {
     if (!managedTarget('/testkit-project', targetRel)) issues.push(`unsafe managed target: ${targetRel}`)
     if (
@@ -189,6 +202,7 @@ export function installHarness(opts: {
   projectRoot: string
   type: TestkitType
   force?: boolean
+  ignoreEntries?: string[]
 }): { written: string[]; unchanged: string[]; conflicts: string[] } {
   const root = path.resolve(opts.projectRoot)
   const previous = loadManifest(root)
@@ -221,6 +235,15 @@ export function installHarness(opts: {
   for (const [targetRel, metadata] of Object.entries(previous?.files ?? {})) {
     if (!files[targetRel]) files[targetRel] = { ...metadata, stale: true }
   }
+  const repoFiles = syncManagedRepoFiles({
+    projectRoot: root,
+    type: opts.type,
+    previous: previous?.managed,
+    ignoreEntries: opts.ignoreEntries,
+  })
+  result.written.push(...repoFiles.written)
+  result.unchanged.push(...repoFiles.unchanged)
+  result.conflicts.push(...repoFiles.conflicts)
   mkdirSync(path.dirname(manifestFile(root)), { recursive: true })
   writeFileSync(
     manifestFile(root),
@@ -233,6 +256,7 @@ export function installHarness(opts: {
         toolApi: 1,
         harnessApi: 1,
         files,
+        managed: repoFiles.managed,
       } satisfies InstallManifest,
       null,
       2,
@@ -275,6 +299,10 @@ export function statusHarness(opts: { projectRoot: string }): HarnessStatus {
       result.healthy.push(targetRel)
     }
   }
+  const repoFiles = managedRepoStatus(root, manifest.managed)
+  result.healthy.push(...repoFiles.healthy)
+  result.missing.push(...repoFiles.missing)
+  result.modified.push(...repoFiles.modified)
   return result
 }
 
@@ -386,6 +414,15 @@ export function uninstallHarness(opts: {
       result.deleted.push(targetRel)
     }
   }
+  const repoFiles = removeManagedRepoFiles({
+    projectRoot: root,
+    managed: manifest.managed,
+    yes: opts.yes,
+  })
+  result.wouldDelete.push(...repoFiles.wouldDelete)
+  result.deleted.push(...repoFiles.deleted)
+  result.preservedModified.push(...repoFiles.preservedModified)
+  result.missing.push(...repoFiles.missing)
 
   if (result.dryRun) {
     result.wouldDelete.push(INSTALL_MANIFEST_PATH)
