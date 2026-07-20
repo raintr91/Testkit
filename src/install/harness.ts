@@ -202,15 +202,14 @@ export function installHarness(opts: {
   projectRoot: string
   type: TestkitType
   force?: boolean
-  ignoreEntries?: string[]
-}): { written: string[]; unchanged: string[]; conflicts: string[] } {
+}): { written: string[]; unchanged: string[]; conflicts: string[]; skipped: string[] } {
   const root = path.resolve(opts.projectRoot)
   const previous = loadManifest(root)
   if (previous) {
     const check = compatibility(previous)
     if (!check.compatible) throw new Error(`Incompatible Testkit install manifest: ${check.issues.join('; ')}`)
   }
-  const result = { written: [] as string[], unchanged: [] as string[], conflicts: [] as string[] }
+  const result = { written: [] as string[], unchanged: [] as string[], conflicts: [] as string[], skipped: [] as string[] }
   const files = currentFiles(opts.type)
   for (const [targetRel, metadata] of Object.entries(files)) {
     const source = path.join(packageRoot(), metadata.source)
@@ -222,6 +221,16 @@ export function installHarness(opts: {
         result.unchanged.push(target)
         continue
       }
+      // Shared config skills can overlap across toolkits; skip instead of conflict if already present
+      if (
+        targetRel.includes('configure-repo-maps') ||
+        targetRel.includes('legacy-platform') ||
+        targetRel.includes('configure-legacy-')
+      ) {
+        result.skipped.push(target)
+        continue
+      }
+      
       const safe = previous?.files[targetRel]?.sha256 === hash(current)
       if (!opts.force && !safe) {
         result.conflicts.push(target)

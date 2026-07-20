@@ -360,6 +360,7 @@ async function main(): Promise<void> {
     })
     for (const file of harness.written) console.log(`  wrote: ${file}`)
     for (const file of harness.unchanged) console.log(`  unchanged: ${file}`)
+    for (const file of harness.skipped) console.log(`  skipped: ${file}`)
     for (const file of harness.conflicts) console.log(`  conflict: ${file}`)
     if (targets.includes('cursor') && !has('--no-codegraph')) {
       const codegraph = wirePlatformDnaCodegraph({
