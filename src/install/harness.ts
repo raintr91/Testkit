@@ -202,6 +202,7 @@ export function installHarness(opts: {
   projectRoot: string
   type: TestkitType
   force?: boolean
+  ignoreEntries?: string[]
 }): { written: string[]; unchanged: string[]; conflicts: string[]; skipped: string[] } {
   const root = path.resolve(opts.projectRoot)
   const previous = loadManifest(root)

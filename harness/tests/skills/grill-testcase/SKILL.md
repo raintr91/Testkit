@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 **Owner:** Testkit (`--type=tests`)
 
-Audit plans only. Spec holes hand off to docs-hub `/update-spec` (Bundlekit), never invent acceptance.
+Audit plans only. Spec holes hand off to docs-hub `/update-spec` (Docskit), never invent acceptance.
 
 Route Functions/W-* evidence through Docskit and symbol/call-graph evidence
 for repo X through its Platform DNA-wired `codegraph-<repo-key>` server. Use
@@ -23,7 +23,7 @@ else: local deterministic coverage/search over targeted plan/docs evidence
 ```
 
 ArtifactGraph indexes this tests hub only; spec-hole handoffs go to docs-hub
-`/update-spec` (Bundlekit), not through ArtifactGraph.
+`/update-spec` (Docskit), not through ArtifactGraph.
 
 Use one stable `runId` per run. When ArtifactGraph is missing, finish the local
 fallback before emitting exactly one `testkit.missing-optional` event for that
