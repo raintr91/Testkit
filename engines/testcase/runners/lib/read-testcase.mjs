@@ -11,7 +11,7 @@ function warnDocsEnrichmentUnavailable(error) {
   docsEnrichmentWarningEmitted = true
   const reason = String(error?.message ?? error ?? 'docs hub input is unavailable').replace(/\s+/g, ' ')
   console.warn(
-    `  warn: optional docs enrichment unavailable (${reason}); testcase generation continues without docs hub ir/spec.yaml context. ` +
+    `  warn: optional docs enrichment unavailable (${reason}); testcase generation continues without docs hub spec.yaml or ir/spec.yaml context. ` +
       'Set TESTKIT_DOCS_ROOT to a valid docs hub to enable enrichment.',
   )
 }
@@ -110,7 +110,7 @@ async function loadDesignSpec(repoRoot, testcase) {
   try {
     const resolved = resolveHubId(repoRoot, screen, 'codegen')
     const abs = resolved.paths?.[0]
-    if (!abs) throw new Error(`No docs hub ir/spec.yaml resolved for ${screen}`)
+    if (!abs) throw new Error(`No docs hub spec.yaml or ir/spec.yaml resolved for ${screen}`)
     const raw = await readFile(abs, 'utf8')
     const spec = parse(raw) ?? {}
     return {

@@ -5,7 +5,7 @@ alwaysApply: true
 
 # Cross-repo index routing
 
-- Architecture IDs and C4 paths belong to Hubdocs through `HUBDOCS_ROOT`.
+- Architecture IDs and Functions/W-* paths belong to Docskit through `DOCSKIT_ROOT`.
   Never use CodeGraph as the architecture index.
 - Test plans use `TESTKIT_TESTS_ROOT`; docs evidence uses
   `TESTKIT_DOCS_ROOT`; IR/registry/generation follows its owning pointer such as

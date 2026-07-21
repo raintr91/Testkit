@@ -261,7 +261,7 @@ test('both lanes install per-repo cross-index routing rules', () => {
       path.join(root, '.cursor', 'rules', 'cross-repo-index-routing.mdc'),
       'utf8',
     )
-    assert.match(rule, /architecture IDs and C4 paths belong to Hubdocs/i)
+    assert.match(rule, /architecture IDs and Functions\/W-\* paths belong to Docskit/i)
     assert.match(rule, /codegraph-<repo-key>/)
     assert.match(rule, /platform-repos\.local\.json/)
     assert.match(rule, /cd <root> && codegraph init/)

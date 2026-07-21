@@ -13,15 +13,15 @@ const fixture = path.join(repoRoot, 'test', 'fixtures', 'TC-PORTABLE-LOGIN.yaml'
 test('bundle-only docs input warns and continues without enrichment', async () => {
   const projectRoot = mkdtempSync(path.join(os.tmpdir(), 'testkit-bundle-only-project-'))
   const docsRoot = mkdtempSync(path.join(os.tmpdir(), 'testkit-bundle-only-docs-'))
-  const codeDir = path.join(docsRoot, 'product', 'W-AUTH-001')
+  const codeDir = path.join(docsRoot, 'Surfaces', 'Admin', 'Modules', 'CMP-01', 'Functions', 'W-AUTH-001')
   mkdirSync(path.join(docsRoot, 'registries'), { recursive: true })
   mkdirSync(codeDir, { recursive: true })
   writeFileSync(
     path.join(docsRoot, 'registries', 'docs-index.json'),
-    `${JSON.stringify({ codeIds: { 'W-AUTH-001': 'product/W-AUTH-001' } }, null, 2)}\n`,
+    `${JSON.stringify({ codeIds: { 'W-AUTH-001': 'Surfaces/Admin/Modules/CMP-01/Functions/W-AUTH-001' } }, null, 2)}\n`,
   )
   writeFileSync(path.join(codeDir, 'auth.bundle.yaml'), 'id: W-AUTH-001\n')
-  writeFileSync(path.join(codeDir, 'spec.yaml'), 'id: W-AUTH-001\n')
+
 
   assert.equal(preferGenSpec(codeDir), null)
 
@@ -43,6 +43,6 @@ test('bundle-only docs input warns and continues without enrichment', async () =
 
   assert.equal(warnings.length, 1)
   assert.match(warnings[0], /optional docs enrichment unavailable/)
-  assert.match(warnings[0], /No ir\/spec\.yaml under product\/W-AUTH-001/)
+  assert.match(warnings[0], /No spec\.yaml or ir\/spec\.yaml under Surfaces\/Admin\/Modules\/CMP-01\/Functions\/W-AUTH-001/)
   assert.match(warnings[0], /generation continues/)
 })

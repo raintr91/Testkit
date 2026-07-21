@@ -80,7 +80,37 @@ function buildTestsIndexFallback(testsRoot) {
       suites[sid] = path.relative(testsRoot, path.join(suitesDir, f)).split(path.sep).join('/')
     }
   }
-  return { version: 1, codeIds, suites, scenarios: {} }
+
+  const scenarios = {}
+  const scenariosDir = path.join(testsRoot, 'scenarios')
+  if (existsSync(scenariosDir)) {
+    for (const cmp of readdirSync(scenariosDir, { withFileTypes: true })) {
+      if (!cmp.isDirectory() || cmp.name.startsWith('.')) continue
+      const cmpPath = path.join(scenariosDir, cmp.name)
+      for (const f of readdirSync(cmpPath)) {
+        if (!/^SC-.*\.md$/i.test(f)) continue
+        const raw = readFileSync(path.join(cmpPath, f), 'utf8')
+        
+        const idMatch = raw.match(/^id:\s*(\S+)/m)
+        const sid = idMatch?.[1] || f.replace(/\.md$/i, '')
+        const capabilityMatch = raw.match(/^capability:\s*(\S+)/m)
+        const featureMatch = raw.match(/^feature:\s*(\S+)/m)
+        const screenMatch = raw.match(/^screen:\s*(\S+)/m)
+        
+        const caseMatches = [...raw.matchAll(/(TC-[\w-]+)/g)]
+        const cases = [...new Set(caseMatches.map(m => m[1]))]
+
+        scenarios[sid] = {
+          capability: capabilityMatch?.[1],
+          component: featureMatch?.[1] || cmp.name,
+          screen: screenMatch?.[1],
+          cases
+        }
+      }
+    }
+  }
+
+  return { version: 1, codeIds, suites, scenarios }
 }
 
 function absUnder(root, rel) {
@@ -90,9 +120,11 @@ function absUnder(root, rel) {
   return abs
 }
 
-/** Prefer ir/spec.yaml under a Code folder for codegen */
+/** Prefer spec.yaml directly or ir/spec.yaml under a Code folder for codegen */
 export function preferGenSpec(codeDir) {
   if (!codeDir || !existsSync(codeDir)) return null
+  const direct = path.join(codeDir, 'spec.yaml')
+  if (existsSync(direct)) return direct
   const ir = path.join(codeDir, 'ir', 'spec.yaml')
   return existsSync(ir) ? ir : null
 }
@@ -173,7 +205,7 @@ export function resolveHubId(repoRoot, id, mode = 'testcase') {
     if (!rel) throw new Error(`Unknown code id ${id} in the docs hub registries/docs-index.json`)
     const codeDir = absUnder(docsRoot, rel)
     const spec = preferGenSpec(codeDir)
-    if (!spec) throw new Error(`No ir/spec.yaml under ${rel}`)
+    if (!spec) throw new Error(`No spec.yaml or ir/spec.yaml under ${rel}`)
     notes.push(`codegen input: ${path.relative(repoRoot, spec)}`)
     return { kind: 'code', id, paths: [spec], notes, codeDir }
   }
@@ -207,7 +239,7 @@ export function resolveHubId(repoRoot, id, mode = 'testcase') {
       notes.push(`skip API ${api} for FE codegen; design lives in docs hub`)
     }
     if (!paths.length) {
-      throw new Error(`CMP ${id}: no gen-ready W-* specs (need ir/spec.yaml after /dev-grill-docs)`)
+      throw new Error(`CMP ${id}: no gen-ready W-* specs (need spec.yaml or ir/spec.yaml after /dev-grill-docs)`)
     }
     return { kind: 'component-code', id, paths, notes }
   }

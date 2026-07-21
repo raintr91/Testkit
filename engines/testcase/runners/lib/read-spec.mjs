@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises'
 import path from 'node:path'
 
 /**
- * Function dir for yaml layout: .../list/ when spec is .../list/ir/spec.yaml
+ * Function dir for yaml layout: .../W-* when spec is .../W-*/spec.yaml or .../W-*/ir/spec.yaml
  * @param {string} specPath absolute or relative
  */
 export function resolveFeatureDir(specPath) {

@@ -10,7 +10,7 @@ disable-model-invocation: true
 
 After `/test`. Plan YAML remains on the tests hub (`/grill-testcase`).
 
-Route architecture/C4 through Hubdocs, plans/docs through
+Route Functions/W-* evidence through Docskit, plans/docs through
 `TESTKIT_TESTS_ROOT` / `TESTKIT_DOCS_ROOT`, and repo-X symbols through its
 Platform DNA-wired `codegraph-<repo-key>` server. Never substitute the current
 repo index for another checkout or initialize a workspace-parent graph.

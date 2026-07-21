@@ -11,7 +11,7 @@ disable-model-invocation: true
 Author SC/TC/suites on the current tests hub. Design rules stay on the docs hub.
 Playwright generation is FE `/test`.
 
-Route cross-repo evidence by owner: architecture/C4 through Hubdocs, plan/docs
+Route cross-repo evidence by owner: Functions/W-* through Docskit, plan/docs
 through `TESTKIT_TESTS_ROOT` / `TESTKIT_DOCS_ROOT`, and symbols for repo X
 through its Platform DNA-wired `codegraph-<repo-key>` server. Never query one
 workspace-wide graph or ask the member to hand-edit MCP config.
