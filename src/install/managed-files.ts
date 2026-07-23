@@ -99,7 +99,7 @@ export function generatedTargets(opts: {
   agentPaths?: string[]
 }): string[] {
   const root = path.resolve(opts.projectRoot)
-  const targets = ['.cursor/', '.testkit/']
+  const targets = ['.cursor/', '.testkit/', '.docskit/']
   for (const file of opts.agentPaths ?? []) {
     const relative = relativeTarget(root, file)
     if (!relative) continue

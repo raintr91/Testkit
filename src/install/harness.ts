@@ -12,6 +12,7 @@ import {
 import { createHash } from 'node:crypto'
 import path from 'node:path'
 import { packageRoot, packageVersion, type TestkitType } from '../config/project-root.js'
+import type { AgentId } from './agents.js'
 import { forgetInstall, recordInstall } from './ledger.js'
 import {
   managedRepoStatus,
@@ -40,6 +41,7 @@ export interface InstallManifest {
   type: TestkitType
   toolApi: 1
   harnessApi: 1
+  targets?: AgentId[]
   files: Record<string, InstallManifestFile>
   managed?: ManagedRepoFiles
 }
@@ -105,23 +107,46 @@ function loadManifest(root: string): InstallManifest | null {
   return existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as InstallManifest) : null
 }
 
-function currentFiles(type: TestkitType): InstallManifest['files'] {
+function currentFiles(type: TestkitType, targets: AgentId[] = ['cursor']): InstallManifest['files'] {
   const sourceRoot = path.join(packageRoot(), 'harness', type)
   const files: InstallManifest['files'] = {}
+  
+  const skillRoots = new Set<string>()
+  for (const agent of targets) {
+    if (agent === 'cursor') skillRoots.add('.cursor')
+    else if (agent === 'gemini' || agent === 'antigravity') skillRoots.add('.agents')
+    else if (agent === 'codex') skillRoots.add('.codex')
+    else if (agent === 'claude') skillRoots.add('.claude')
+    else if (agent === 'hermes') skillRoots.add('.hermes')
+    else if (agent === 'opencode') skillRoots.add('.opencode')
+    else if (agent === 'kiro') skillRoots.add('.kiro')
+    else if (agent === 'kilo') skillRoots.add('.kilocode')
+  }
+  skillRoots.add('.docskit')
+
   for (const source of walk(sourceRoot)) {
     const rel = path.relative(sourceRoot, source)
-    const targetRel = path.join('.cursor', rel).split(path.sep).join('/')
     const content = readFileSync(source, 'utf8')
-    files[targetRel] = {
-      source: path.relative(packageRoot(), source).split(path.sep).join('/'),
-      sha256: hash(content),
+    const sha256 = hash(content)
+    const relSource = path.relative(packageRoot(), source).split(path.sep).join('/')
+    for (const root of skillRoots) {
+      const targetRel = path.join(root, rel).split(path.sep).join('/')
+      files[targetRel] = {
+        source: relSource,
+        sha256: sha256,
+      }
     }
   }
   const schemaSource = path.join(packageRoot(), 'schemas', 'missing-optional-event.schema.json')
-  const schemaTarget = '.cursor/schemas/testkit/missing-optional-event.schema.json'
-  files[schemaTarget] = {
-    source: path.relative(packageRoot(), schemaSource).split(path.sep).join('/'),
-    sha256: hash(readFileSync(schemaSource, 'utf8')),
+  const schemaContent = readFileSync(schemaSource, 'utf8')
+  const schemaSha = hash(schemaContent)
+  const schemaRelSource = path.relative(packageRoot(), schemaSource).split(path.sep).join('/')
+  for (const root of skillRoots) {
+    const schemaTarget = path.join(root, 'schemas/testkit/missing-optional-event.schema.json').split(path.sep).join('/')
+    files[schemaTarget] = {
+      source: schemaRelSource,
+      sha256: schemaSha,
+    }
   }
   return files
 }
@@ -201,6 +226,7 @@ function compatibility(manifest: InstallManifest): HarnessCompatibility {
 export function installHarness(opts: {
   projectRoot: string
   type: TestkitType
+  targets?: AgentId[]
   force?: boolean
   ignoreEntries?: string[]
 }): { written: string[]; unchanged: string[]; conflicts: string[]; skipped: string[] } {
@@ -211,7 +237,7 @@ export function installHarness(opts: {
     if (!check.compatible) throw new Error(`Incompatible Testkit install manifest: ${check.issues.join('; ')}`)
   }
   const result = { written: [] as string[], unchanged: [] as string[], conflicts: [] as string[], skipped: [] as string[] }
-  const files = currentFiles(opts.type)
+  const files = currentFiles(opts.type, opts.targets ?? previous?.targets ?? ['cursor'])
   for (const [targetRel, metadata] of Object.entries(files)) {
     const source = path.join(packageRoot(), metadata.source)
     const target = path.join(root, targetRel)
@@ -265,6 +291,7 @@ export function installHarness(opts: {
         type: opts.type,
         toolApi: 1,
         harnessApi: 1,
+        targets: opts.targets ?? previous?.targets ?? ['cursor'],
         files,
         managed: repoFiles.managed,
       } satisfies InstallManifest,
@@ -295,7 +322,7 @@ export function statusHarness(opts: { projectRoot: string }): HarnessStatus {
   result.type = manifest.type
   result.packageVersion = manifest.packageVersion
   const currentTargets = ['tests', 'fe'].includes(manifest.type)
-    ? new Set(Object.keys(currentFiles(manifest.type)))
+    ? new Set(Object.keys(currentFiles(manifest.type, manifest.targets ?? ['cursor'])))
     : new Set<string>()
   for (const [targetRel, metadata] of Object.entries(manifest.files ?? {})) {
     const target = managedTarget(root, targetRel)
@@ -322,7 +349,7 @@ export function pruneHarness(opts: { projectRoot: string; yes?: boolean }): Prun
   if (!manifest) throw new Error(`Testkit install manifest not found: ${manifestFile(root)}`)
   const check = compatibility(manifest)
   if (!check.compatible) throw new Error(`Incompatible Testkit install manifest: ${check.issues.join('; ')}`)
-  const currentTargets = new Set(Object.keys(currentFiles(manifest.type)))
+  const currentTargets = new Set(Object.keys(currentFiles(manifest.type, manifest.targets ?? ['cursor'])))
   const result: PruneHarnessResult = {
     dryRun: !opts.yes,
     candidates: [],

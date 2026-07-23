@@ -352,6 +352,7 @@ async function main(): Promise<void> {
     const harness = installHarness({
       projectRoot: root,
       type,
+      targets,
       force: has('--force'),
       ignoreEntries: generatedTargets({
         projectRoot: root,

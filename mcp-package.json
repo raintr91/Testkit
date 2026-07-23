@@ -1,10 +1,15 @@
 {
   "schemaVersion": 1,
   "package": "@platform/testkit",
-  "version": "0.3.0",
-  "types": ["tests", "fe"],
+  "version": "0.3.1",
+  "types": [
+    "tests",
+    "fe"
+  ],
   "requires": [],
-  "optional": ["@platform/artifactgraph"],
+  "optional": [
+    "@platform/artifactgraph"
+  ],
   "tools": [
     "cases_render",
     "cases_check_plans",
@@ -14,8 +19,14 @@
     "e2e_registry_validate"
   ],
   "skillsByType": {
-    "tests": ["testcase", "grill-testcase"],
-    "fe": ["test", "grill-test"]
+    "tests": [
+      "testcase",
+      "grill-testcase"
+    ],
+    "fe": [
+      "test",
+      "grill-test"
+    ]
   },
   "compatibility": {
     "node": ">=22",
