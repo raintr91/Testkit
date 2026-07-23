@@ -117,7 +117,18 @@ test('init is idempotent and deinit removes only Testkit-owned repo changes', ()
     readFileSync(path.join(root, INSTALL_MANIFEST_PATH), 'utf8'),
   )
   assert.deepEqual(manifest.managed.packageScripts, TESTKIT_PACKAGE_SCRIPTS)
-  assert.deepEqual(manifest.managed.gitignoreLines, ['.cursor/', '.testkit/'])
+  assert.deepEqual(manifest.managed.gitignoreLines, [
+    '.cursor/',
+    '.agents/',
+    '.codex/',
+    '.claude/',
+    '.hermes/',
+    '.opencode/',
+    '.kiro/',
+    '.kilocode/',
+    '.testkit/',
+    '.docskit/',
+  ])
 
   const second = runCli(root, 'init', '--target=cursor', '--type=tests', '--yes')
   assert.equal(second.status, 0, second.stderr)
@@ -195,12 +206,19 @@ test('generated targets contain only selected actual local agent paths', () => {
   })
   assert.deepEqual(targets, [
     '.cursor/',
+    '.agents/',
+    '.codex/',
+    '.claude/',
+    '.hermes/',
+    '.opencode/',
+    '.kiro/',
+    '.kilocode/',
     '.testkit/',
-    '.codex/config.toml',
+    '.docskit/',
     '.gemini/settings.json',
   ])
-  assert.equal(targets.some((entry) => entry.includes('claude')), false)
-  assert.equal(targets.some((entry) => entry.includes('opencode')), false)
+  assert.equal(targets.some((entry) => entry.includes('claude')), true)
+  assert.equal(targets.some((entry) => entry.includes('opencode')), true)
 })
 
 test('gitignore contract migrates the legacy broad Testkit block', () => {
@@ -225,8 +243,15 @@ test('multi-agent init records exact targets and status detects missing equivale
   const manifest = JSON.parse(readFileSync(path.join(root, INSTALL_MANIFEST_PATH), 'utf8'))
   assert.deepEqual(manifest.managed.gitignoreLines, [
     '.cursor/',
+    '.agents/',
+    '.codex/',
+    '.claude/',
+    '.hermes/',
+    '.opencode/',
+    '.kiro/',
+    '.kilocode/',
     '.testkit/',
-    '.codex/config.toml',
+    '.docskit/',
     '.gemini/settings.json',
   ])
   assert.equal(manifest.managed.gitignoreLines.includes('.claude.json'), false)
@@ -234,9 +259,9 @@ test('multi-agent init records exact targets and status detects missing equivale
   const ignoreFile = path.join(root, '.gitignore')
   writeFileSync(
     ignoreFile,
-    readFileSync(ignoreFile, 'utf8').replace('.codex/config.toml\n', ''),
+    readFileSync(ignoreFile, 'utf8').replace('.gemini/settings.json\n', ''),
   )
-  assert.ok(statusHarness({ projectRoot: root }).missing.includes('.gitignore#.codex/config.toml'))
+  assert.ok(statusHarness({ projectRoot: root }).missing.includes('.gitignore#.gemini/settings.json'))
 })
 
 test('deinit keeps shared Cursor ignore and another toolkit asset', () => {

@@ -99,7 +99,18 @@ export function generatedTargets(opts: {
   agentPaths?: string[]
 }): string[] {
   const root = path.resolve(opts.projectRoot)
-  const targets = ['.cursor/', '.testkit/', '.docskit/']
+  const targets = [
+    '.cursor/',
+    '.agents/',
+    '.codex/',
+    '.claude/',
+    '.hermes/',
+    '.opencode/',
+    '.kiro/',
+    '.kilocode/',
+    '.testkit/',
+    '.docskit/',
+  ]
   for (const file of opts.agentPaths ?? []) {
     const relative = relativeTarget(root, file)
     if (!relative) continue
@@ -283,7 +294,7 @@ export function removeManagedRepoFiles(opts: {
     writeFileSync(packageFile, `${JSON.stringify(document, null, 2)}\n`, 'utf8')
   }
 
-  // Ignore entries are intentionally retained. Targets such as `.cursor/`
+  // Ignore entries are intentionally retained. Targets such as `.cursor/`, `.claude/`, etc.
   // are shared by multiple toolkits, so deinit cannot safely infer exclusive
   // ownership from this toolkit's manifest.
   return result
